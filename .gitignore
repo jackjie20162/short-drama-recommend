@@ -1,0 +1,28 @@
+# Go
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+coverage.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Generated
+**/gen/
+**/pb/*.go
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
