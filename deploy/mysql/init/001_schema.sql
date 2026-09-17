@@ -1,0 +1,96 @@
+CREATE DATABASE IF NOT EXISTS short_drama DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE short_drama;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  external_id VARCHAR(128) NOT NULL DEFAULT '',
+  country VARCHAR(16) NOT NULL DEFAULT '',
+  language VARCHAR(16) NOT NULL DEFAULT 'en',
+  locale VARCHAR(32) NOT NULL DEFAULT 'en-US',
+  timezone VARCHAR(64) NOT NULL DEFAULT 'UTC',
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_external_id (external_id),
+  KEY idx_country_language (country, language)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS dramas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  cover VARCHAR(1024) NOT NULL DEFAULT '',
+  country VARCHAR(16) NOT NULL DEFAULT '',
+  language VARCHAR(16) NOT NULL DEFAULT 'en',
+  total_episodes INT UNSIGNED NOT NULL DEFAULT 0,
+  is_paid TINYINT NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1,
+  published_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_status_published (status, published_at),
+  KEY idx_country_language (country, language)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS episodes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  drama_id BIGINT UNSIGNED NOT NULL,
+  episode_no INT UNSIGNED NOT NULL,
+  title VARCHAR(255) NOT NULL DEFAULT '',
+  duration_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  video_url VARCHAR(1024) NOT NULL DEFAULT '',
+  poster_url VARCHAR(1024) NOT NULL DEFAULT '',
+  is_paid TINYINT NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_drama_episode (drama_id, episode_no),
+  KEY idx_drama_status (drama_id, status)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS tags (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name VARCHAR(64) NOT NULL,
+  language VARCHAR(16) NOT NULL DEFAULT 'en',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_name_language (name, language)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS drama_tags (
+  drama_id BIGINT UNSIGNED NOT NULL,
+  tag_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (drama_id, tag_id),
+  KEY idx_tag_drama (tag_id, drama_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS behavior_events (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  drama_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  episode_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  event_type VARCHAR(32) NOT NULL,
+  watch_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  duration_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  country VARCHAR(16) NOT NULL DEFAULT '',
+  language VARCHAR(16) NOT NULL DEFAULT '',
+  device VARCHAR(32) NOT NULL DEFAULT '',
+  event_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_user_event (user_id, event_at),
+  KEY idx_drama_event (drama_id, event_type, event_at),
+  KEY idx_event_at (event_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS user_tag_profiles (
+  user_id BIGINT UNSIGNED NOT NULL,
+  tag_id BIGINT UNSIGNED NOT NULL,
+  weight DECIMAL(10,4) NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, tag_id),
+  KEY idx_user_weight (user_id, weight)
+) ENGINE=InnoDB;
