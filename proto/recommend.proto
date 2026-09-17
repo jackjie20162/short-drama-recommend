@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package recommend;
+option go_package = "short-drama-recommend/rpc/recommend-rpc/pb";
+
+message FeedRequest {
+  int64 user_id = 1;
+  string country = 2;
+  string language = 3;
+  int32 page_size = 4;
+  string cursor = 5;
+}
+
+message FeedItem {
+  int64 drama_id = 1;
+  string title = 2;
+  string cover = 3;
+  float score = 4;
+  repeated string reasons = 5;
+}
+
+message FeedResponse {
+  repeated FeedItem items = 1;
+  string next_cursor = 2;
+}
+
+service RecommendService {
+  rpc GetFeed(FeedRequest) returns (FeedResponse);
+}
