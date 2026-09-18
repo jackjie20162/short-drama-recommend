@@ -9,7 +9,7 @@ import(
  "github.com/zeromicro/go-zero/zrpc"
  "short-drama-recommend/api/drama-admin-api/internal/config"
  "short-drama-recommend/rpc/drama-rpc/pb"
- "short-drama-recommend/rpc/payment-rpc/pb" 
+ paymentpb "short-drama-recommend/rpc/payment-rpc/pb"
 )
 type ServiceContext struct{Drama pb.DramaAdminServiceClient;Payment paymentpb.PaymentServiceClient}
 func NewServiceContext(c config.Config)*ServiceContext{return &ServiceContext{Drama:pb.NewDramaAdminServiceClient(zrpc.MustNewClient(c.DramaRpc).Conn()),Payment:paymentpb.NewPaymentServiceClient(zrpc.MustNewClient(c.PaymentRpc).Conn())}}
