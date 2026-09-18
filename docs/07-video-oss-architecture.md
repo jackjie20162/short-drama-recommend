@@ -2,114 +2,169 @@
 
 ## 目标
 
-短剧视频统一采用 HLS（M3U8）播放，视频文件不进入 MySQL，也不建议直接放在应用服务器磁盘。
+短剧视频统一采用 **HLS（M3U8）**。原始视频、M3U8 playlist、分片都放对象存储/CDN，不放 MySQL，也不把大文件长期放应用服务器。
 
-推荐链路：
+### 对象存储必须支持多云
 
-管理后台
-→ Media/OSS 上传服务
-→ OSS Bucket
-→ 转码/切片
-→ `master.m3u8` / `index.m3u8` + TS/FMP4 分片
-→ CDN
-→ Client Tauri / H5 / Web
-→ HLS 播放器
+第一版设计同时支持：
 
-## OSS 对象结构
+- **阿里云 OSS**
+- **AWS S3**
+
+不要把 media 服务写死成 OSS。统一抽象：
 
 ```
-short-drama/
-  {drama_id}/
-    {episode_id}/
-      source/
-        original.mp4
-      hls/
-        master.m3u8
-        720p/
-          index.m3u8
-          *.m4s
-        1080p/
-          index.m3u8
-          *.m4s
-      poster/
-        cover.jpg
+Media Storage Interface
+ ├── Aliyun OSS Adapter
+ └── AWS S3 Adapter
 ```
 
-生产环境建议播放域名独立，例如 `https://media.example.com`，由 CDN 回源 OSS。
+未来可以继续增加 Cloudflare R2、腾讯云 COS 等实现，而业务层不用改。
+
+## 推荐链路
+
+```
+Admin
+  ↓
+media-api
+  ↓
+media-rpc
+  ↓
+Storage Adapter
+  ├── OSS
+  └── S3
+  ↓
+Transcode / HLS
+  ↓
+CDN
+  ↓
+master.m3u8
+  ↓
+Tauri / H5 / Web
+```
+
+## 对象结构
+
+```
+short-drama/{country}/{language}/{drama_id}/{episode_id}/
+├── source/original.mp4
+├── hls/master.m3u8
+├── hls/720p/index.m3u8
+├── hls/1080p/index.m3u8
+└── poster/cover.jpg
+```
 
 ## 数据库
 
 episodes 保存：
 
-- video_format：默认 m3u8
-- video_storage：默认 oss
-- video_object_key：OSS 对象 Key
-- video_playback_url：CDN 播放地址
+- video_provider：OSS / S3
+- video_storage：oss / s3
+- video_region
+- video_bucket
+- video_object_key
+- video_playback_url
+- video_format：m3u8
 - video_status：UPLOADING / PROCESSING / READY / FAILED
-- video_size_bytes
-- video_checksum
-- video_updated_at
+- size / checksum / 更新时间
 
-旧的 video_url 保留兼容，不再作为长期推荐字段。
+客户端永远拿不到云存储 AccessKey / Secret。
 
-## 上传
+## 发布短剧必须选择国家和语言
 
-不能让浏览器把大视频经过 drama-api 转发。
+短剧是全球发行，因此发布页面必须明确：
 
-正确方式：
+- 国家 / 市场
+- 内容语言
+- 播放语言
+- 后续可以扩展字幕语言
 
-1. admin-api 创建上传任务
-2. 后端生成 OSS 临时凭证/预签名上传信息
-3. 管理后台直接上传 OSS
-4. 上传完成回调 media 服务
-5. media 服务触发转码/切片
-6. 状态 PROCESSING → READY
-7. 返回 CDN M3U8 播放地址
-8. episode 保存 playback_url/object_key
+建议内部使用标准 ISO code，例如：
 
-这样可以避免 API 网关成为视频带宽瓶颈。
+- US / en
+- GB / en
+- CA / en
+- AE / ar
+- JP / ja
+- KR / ko
+- CN / zh-CN
+
+国家和语言既用于内容筛选，也用于推荐、SEO、CDN 路由和后续多语言版本管理。
+
+## 上传设计
+
+不能：
+
+```
+Browser → drama-api → OSS/S3
+```
+
+应该：
+
+```
+Admin → media-api → presigned upload
+                         ↓
+                    OSS / S3
+                         ↓
+                    transcode
+                         ↓
+                       HLS
+                         ↓
+                       CDN
+```
+
+这样 API 不承担视频带宽。
 
 ## 播放
 
-付费剧集必须先通过 drama-rpc 权益检查，再返回播放地址。
-
-生产环境进一步使用短时签名 URL / CDN 防盗链；不要把 OSS AccessKey、Secret 写入客户端。
-
-Tauri 客户端：
-
-- Safari/WebKit 原生支持 HLS 时直接播放
-- 其他 WebView 使用 hls.js
-- 播放地址优先使用 video_playback_url
-- 必须支持 HTTPS/CORS
-
-## 后续服务拆分
-
-建议增加独立 `media-rpc`：
+付费剧：
 
 ```
-merchant/admin
-   ↓
-media-api
-   ↓
-media-rpc
-   ├── OSS
-   ├── upload task
-   ├── transcode
-   ├── HLS packaging
-   └── CDN/sign URL
+Client
+ ↓
+drama-api
+ ↓
+drama-rpc entitlement check
+ ↓
+生成短时播放地址
+ ↓
+CDN
+ ↓
+M3U8
 ```
 
-这样旅游/短剧未来都可以复用媒体服务。
+生产环境使用 CDN signed URL / token 防盗链。
 
-## 当前开发阶段
+## 发布页面
 
-先完成：
+```
+国家： [United States ▼]
+语言： [English ▼]
 
-1. 数据库字段
-2. 后台剧集保存 M3U8 / OSS Key
-3. 客户端 HLS 播放
-4. media-rpc + OSS 上传
-5. 转码队列
-6. CDN 签名、防盗链
+视频：
+[上传视频]
 
-不要把原始 MP4 或 M3U8 分片提交进 Git，也不要存 MySQL BLOB。
+存储：
+[OSS ▼]
+或
+[AWS S3 ▼]
+
+转码：
+[HLS / M3U8]
+
+状态：
+上传中 → 转码中 → READY
+```
+
+国家和语言属于内容元数据，不应该依赖客户端 IP 推断。
+
+## 下一步
+
+1. media-rpc storage interface
+2. OSS adapter
+3. AWS S3 adapter
+4. presigned upload
+5. FFmpeg/HLS 转码任务
+6. CDN signed URL
+7. Admin 上传组件
+8. 视频状态回调
