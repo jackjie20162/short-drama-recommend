@@ -3,8 +3,8 @@ ListenOn: 0.0.0.0:9005
 Mysql:
   DataSource: root:root@tcp(127.0.0.1:3307)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
 Stripe:
-  SecretKey: ""
+  SecretKey: "__STRIPE_SECRET_KEY__"
 Paypal:
-  ClientID: ""
-  ClientSecret: ""
-  Env: sandbox
+  ClientID: "__PAYPAL_CLIENT_ID__"
+  ClientSecret: "__PAYPAL_CLIENT_SECRET__"
+  Env: "__PAYPAL_ENV__"
