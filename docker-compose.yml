@@ -7,8 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: short_drama
       TZ: UTC
-    ports:
-      - "3307:3306"
+    ports: ["3307:3306"]
     volumes:
       - mysql_data:/var/lib/mysql
       - ./deploy/mysql/init:/docker-entrypoint-initdb.d:ro
@@ -22,11 +21,52 @@ services:
     image: redis:7.4-alpine
     container_name: short-drama-redis
     restart: unless-stopped
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
+    ports: ["6380:6379"]
+    volumes: [redis_data:/data]
     command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  user-rpc:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: user-rpc } }
+    container_name: short-drama-user-rpc
+    depends_on: { mysql: { condition: service_healthy }, redis: { condition: service_healthy } }
+    ports: ["9001:9001"]
+    command: ["user-rpc", "/app/etc/user.yaml"]
+
+  drama-rpc:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: drama-rpc } }
+    container_name: short-drama-drama-rpc
+    depends_on: { mysql: { condition: service_healthy } }
+    ports: ["9002:9002"]
+    command: ["drama-rpc", "/app/etc/drama.yaml"]
+
+  behavior-rpc:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: behavior-rpc } }
+    container_name: short-drama-behavior-rpc
+    depends_on: { mysql: { condition: service_healthy }, redis: { condition: service_healthy } }
+    ports: ["9003:9003"]
+    command: ["behavior-rpc", "/app/etc/behavior.yaml"]
+
+  recommend-rpc:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: recommend-rpc } }
+    container_name: short-drama-recommend-rpc
+    depends_on: { mysql: { condition: service_healthy }, redis: { condition: service_healthy } }
+    ports: ["9004:9004"]
+    command: ["recommend-rpc", "/app/etc/recommend.yaml"]
+
+  drama-api:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: drama-api } }
+    container_name: short-drama-drama-api
+    depends_on:
+      drama-rpc: { condition: service_started }
+      behavior-rpc: { condition: service_started }
+      recommend-rpc: { condition: service_started }
+    ports: ["8080:8080"]
+    command: ["drama-api", "/app/etc/drama-api.yaml"]
 
 volumes:
   mysql_data:
