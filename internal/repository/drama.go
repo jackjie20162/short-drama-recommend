@@ -21,13 +21,13 @@ func NewMySQLDramaRepository(db *sql.DB) *MySQLDramaRepository {
 }
 
 func (r *MySQLDramaRepository) GetByID(ctx context.Context, id uint64) (*model.Drama, error) {
-	const q = `SELECT id,title,description,cover,country,language,total_episodes,is_paid,status
+	const q = `SELECT id,title,description,cover,country,language,total_episodes,is_paid,price_cents,currency,status
 FROM dramas WHERE id=? LIMIT 1`
 	var d model.Drama
 	var paid int8
 	err := r.db.QueryRowContext(ctx, q, id).Scan(
 		&d.ID, &d.Title, &d.Description, &d.Cover, &d.Country,
-		&d.Language, &d.TotalEpisodes, &paid, &d.Status,
+		&d.Language, &d.TotalEpisodes, &paid, &d.PriceCents, &d.Currency, &d.Status,
 	)
 	if err != nil {
 		return nil, err
