@@ -12,6 +12,7 @@ func registerRoutes(server *rest.Server, svcCtx *svc.ServiceContext) {
 	h := handler.NewHandler(svcCtx)
 	server.AddRoutes([]rest.Route{
 		{Method:http.MethodGet, Path:"/api/v1/dramas/:id", Handler:h.GetDrama},
+		{Method:http.MethodGet, Path:"/api/v1/dramas/:id/episodes", Handler:h.ListEpisodes},
 		{Method:http.MethodGet, Path:"/api/v1/dramas", Handler:h.ListDrama},
 		{Method:http.MethodGet, Path:"/api/v1/feed", Handler:h.GetFeed},
 		{Method:http.MethodPost, Path:"/api/v1/behaviors", Handler:h.RecordBehavior},
