@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS users (
   PRIMARY KEY (id),
   UNIQUE KEY uk_external_id (external_id),
   KEY idx_country_language (country, language),
-  UNIQUE KEY uk_drama_identity (title, country, language)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS dramas (
@@ -26,6 +25,8 @@ CREATE TABLE IF NOT EXISTS dramas (
   language VARCHAR(16) NOT NULL DEFAULT 'en',
   total_episodes INT UNSIGNED NOT NULL DEFAULT 0,
   is_paid TINYINT NOT NULL DEFAULT 0,
+  price_cents BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  currency VARCHAR(8) NOT NULL DEFAULT 'USD',
   status TINYINT NOT NULL DEFAULT 1,
   published_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
