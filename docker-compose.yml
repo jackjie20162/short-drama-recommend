@@ -63,6 +63,11 @@ services:
     container_name: short-drama-payment-rpc
     depends_on: { mysql: { condition: service_healthy } }
     ports: ["9005:9005"]
+    environment:
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+      PAYPAL_ENV: ${PAYPAL_ENV:-sandbox}
     command: ["payment-rpc", "/app/etc/payment.yaml"]
 
   drama-api:
