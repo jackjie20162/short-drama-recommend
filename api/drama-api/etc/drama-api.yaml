@@ -3,17 +3,8 @@ Host: 0.0.0.0
 Port: 8080
 Timeout: 5000
 DramaRpc:
-  Etcd:
-    Hosts:
-      - 127.0.0.1:2379
-    Key: drama-rpc
+  Target: 127.0.0.1:9002
 BehaviorRpc:
-  Etcd:
-    Hosts:
-      - 127.0.0.1:2379
-    Key: behavior-rpc
+  Target: 127.0.0.1:9003
 RecommendRpc:
-  Etcd:
-    Hosts:
-      - 127.0.0.1:2379
-    Key: recommend-rpc
+  Target: 127.0.0.1:9004
