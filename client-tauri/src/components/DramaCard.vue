@@ -1,0 +1,2 @@
+<script setup lang="ts">defineProps<{drama:any}>()</script>
+<template><article class="drama-card" @click="$router.push('/drama/'+drama.drama_id)"><div class="cover cover-art"><img v-if="drama.cover" :src="drama.cover" :alt="drama.title"><span v-else>{{drama.title}}</span><b v-if="drama.is_paid">PREMIUM</b></div><h3>{{drama.title}}</h3><p>{{drama.reasons?.join(' · ')||drama.country+' · '+drama.language}}</p></article></template>
