@@ -1,18 +1,125 @@
 <script setup lang="ts">
-import {ref,onMounted} from 'vue'
-import {ElMessage} from 'element-plus'
-const API='http://127.0.0.1:8080', data=ref<any[]>([]), detail=ref<any>(null), loading=ref(false)
-const episodes=ref<any[]>([])
-async function load(){loading.value=true;try{const r=await fetch(API+'/api/v1/feed?user_id=1&country=US&language=en&page_size=20');const j=await r.json();data.value=j.items||[]}catch{ElMessage.error('无法连接服务')}finally{loading.value=false}}
-async function openDrama(x:any){const r=await fetch(API+'/api/v1/dramas/'+x.drama_id);const j=await r.json();detail.value=j.drama;episodes.value=[]}
-function watch(e:any){if(e.is_paid||detail.value.is_paid)ElMessage.info('该剧集需要购买后观看');else if(e.video_url)window.open(e.video_url,'_blank');else ElMessage.warning('该集暂无视频地址')}
-onMounted(load)
+import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+
+const API = 'http://127.0.0.1:8080'
+const page = ref('home')
+const loading = ref(false)
+const dramas = ref<any[]>([])
+const detail = ref<any>(null)
+const episodes = ref<any[]>([])
+const payment = ref<any>(null)
+const provider = ref<'STRIPE'|'PAYPAL'>('STRIPE')
+const userId = 1
+const orders = ref<any[]>([])
+const orderIdInput = ref('')
+
+async function request(path:string, init?:RequestInit){
+  const r = await fetch(API + path, init)
+  const j = await r.json().catch(()=>({}))
+  if(!r.ok) throw new Error(j.message || j.error || '请求失败')
+  return j
+}
+async function loadHome(){
+  loading.value=true
+  try { const j=await request('/api/v1/feed?user_id=1&country=US&language=en&page_size=20'); dramas.value=j.items||[] }
+  catch(e:any){ ElMessage.error(e.message) } finally { loading.value=false }
+}
+async function openDrama(x:any){
+  try {
+    const j=await request('/api/v1/dramas/'+x.drama_id)
+    detail.value=j.drama
+    episodes.value=j.episodes||[]
+    page.value='detail'
+  } catch(e:any){ElMessage.error(e.message)}
+}
+async function buy(){
+  if(!detail.value) return
+  try {
+    const j=await request('/api/v1/payments/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      user_id:userId, drama_id:detail.value.id, provider:provider.value, currency:'USD',
+      return_url:'http://127.0.0.1:1421/?payment=success', cancel_url:'http://127.0.0.1:1421/?payment=cancel'
+    })})
+    payment.value=j
+    if(provider.value==='PAYPAL' && j.approve_url) window.open(j.approve_url,'_blank')
+    ElMessage.success('订单已创建')
+    page.value='checkout'
+  } catch(e:any){ElMessage.error(e.message)}
+}
+function watchEpisode(e:any){
+  if(detail.value?.is_paid){ ElMessage.info('请先购买本剧'); return }
+  if(e.video_url) window.open(e.video_url,'_blank'); else ElMessage.warning('暂无视频地址')
+}
+async function queryOrder(){
+  if(!orderIdInput.value) return
+  try { const j=await request('/api/v1/payments/orders/'+orderIdInput.value); orders.value=[j] }
+  catch(e:any){ElMessage.error(e.message)}
+}
+onMounted(loadHome)
 </script>
+
 <template>
-<div class="app">
-<header><div class="brand">Short Drama</div><div class="locale">US · English</div></header>
-<main><div class="hero"><h1>Short Drama</h1><p>Discover stories made for you.</p></div><div class="toolbar"><b>For You</b><el-button text :loading="loading" @click="load">刷新</el-button></div>
-<div class="feed"><el-card v-for="x in data" :key="x.drama_id" class="drama" shadow="hover" @click="openDrama(x)"><div class="cover"><img v-if="x.cover" :src="x.cover"><span v-else>DRAMA</span></div><h3>{{x.title}}</h3><small>{{x.reasons?.join(' · ')}}</small></el-card></div></main>
-<el-dialog v-model="detail" width="760px" title="短剧详情"><div v-if="detail"><h2>{{detail.title}}</h2><p>{{detail.description}}</p><el-tag :type="detail.is_paid?'warning':'success'">{{detail.is_paid?'付费短剧':'免费观看'}}</el-tag><el-divider/><h3>剧集</h3><el-empty v-if="!episodes.length" description="剧集接口即将接入"/><el-button v-for="e in episodes" :key="e.id" @click="watch(e)">第{{e.episode_no}}集 {{e.title}}</el-button><div class="watch"><el-button type="primary" @click="ElMessage.info(detail.is_paid?'进入购买流程':'开始播放')">{{detail.is_paid?'购买观看':'开始观看'}}</el-button></div></div></el-dialog>
+<div class="client-shell">
+  <header class="nav">
+    <div class="logo" @click="page='home';loadHome()">SHORT<span>DRAMA</span></div>
+    <nav>
+      <el-button text @click="page='home';loadHome()">首页</el-button>
+      <el-button text @click="page='discover'">发现</el-button>
+      <el-button text @click="page='orders'">我的订单</el-button>
+      <el-button text @click="page='profile'">我的</el-button>
+    </nav>
+    <div class="locale">US / English</div>
+  </header>
+
+  <main class="content">
+    <section v-if="page==='home'">
+      <div class="hero"><div><p class="eyebrow">GLOBAL SHORT DRAMA</p><h1>Stories you can't stop watching.</h1><p>Personalized short dramas for viewers around the world.</p></div><el-button type="primary" size="large" @click="page='discover'">Explore now</el-button></div>
+      <div class="section-head"><h2>For You</h2><el-button text :loading="loading" @click="loadHome">刷新</el-button></div>
+      <div class="grid">
+        <el-card v-for="x in dramas" :key="x.drama_id" class="drama-card" shadow="hover" @click="openDrama(x)">
+          <div class="cover"><img v-if="x.cover" :src="x.cover"><span v-else>SHORT DRAMA</span></div>
+          <h3>{{x.title}}</h3><p>{{x.reasons?.join(' · ')}}</p>
+        </el-card>
+      </div>
+    </section>
+
+    <section v-else-if="page==='discover'">
+      <div class="page-title"><p class="eyebrow">DISCOVER</p><h1>Find your next obsession</h1><p>Browse recommendations by country and language.</p></div>
+      <div class="grid"><el-card v-for="x in dramas" :key="x.drama_id" class="drama-card" @click="openDrama(x)"><div class="cover"><span>{{x.title}}</span></div><h3>{{x.title}}</h3><p>{{x.reasons?.join(' · ')}}</p></el-card></div>
+    </section>
+
+    <section v-else-if="page==='detail' && detail">
+      <el-button text @click="page='home'">← 返回</el-button>
+      <div class="detail">
+        <div class="detail-cover"><img v-if="detail.cover" :src="detail.cover"><span v-else>SHORT DRAMA</span></div>
+        <div class="detail-main"><p class="eyebrow">{{detail.country}} · {{detail.language}}</p><h1>{{detail.title}}</h1><p>{{detail.description}}</p>
+          <div class="price" v-if="detail.is_paid">USD {{Number(detail.price_cents||499)/100}}</div><el-tag v-if="detail.is_paid" type="warning">付费剧</el-tag><el-tag v-else type="success">免费</el-tag>
+          <div class="actions"><el-button v-if="detail.is_paid" type="primary" size="large" @click="page='checkout'">立即购买</el-button><el-button v-else type="primary" size="large">开始观看</el-button></div>
+        </div>
+      </div>
+      <el-card class="episodes"><template #header><b>剧集列表</b></template><div class="episode-list"><el-button v-for="e in episodes" :key="e.id" @click="watchEpisode(e)">第 {{e.episode_no}} 集 {{e.title}}</el-button><el-empty v-if="!episodes.length" description="剧集数据待接口接入"/></div></el-card>
+    </section>
+
+    <section v-else-if="page==='checkout'">
+      <div class="page-title"><p class="eyebrow">CHECKOUT</p><h1>Complete your purchase</h1><p>Secure payment · Instant unlock after confirmation</p></div>
+      <el-card class="checkout"><h2>{{detail?.title||'Short Drama'}}</h2><div class="checkout-price">USD {{Number(detail?.price_cents||499)/100}}</div>
+        <el-radio-group v-model="provider" class="providers"><el-radio-button label="STRIPE">Stripe</el-radio-button><el-radio-button label="PAYPAL">PayPal</el-radio-button></el-radio-group>
+        <el-alert v-if="provider==='STRIPE'" title="Stripe 支付" description="订单创建后将返回 PaymentIntent client_secret；下一步接入 Stripe.js 完成卡支付。" type="info" show-icon/>
+        <el-alert v-else title="PayPal Sandbox" description="创建订单后打开 PayPal 授权页面，授权完成后回到本客户端并执行 Capture。" type="info" show-icon/>
+        <el-button type="primary" size="large" class="pay-btn" @click="buy">创建 {{provider}} 支付订单</el-button>
+        <div v-if="payment" class="payment-result"><p>订单号：{{payment.order_no}}</p><p>状态：{{payment.status}}</p><p v-if="payment.client_secret">PaymentIntent：{{payment.provider_order_id}}</p><el-button v-if="payment.approve_url" type="success" @click="window.open(payment.approve_url,'_blank')">打开 PayPal</el-button></div>
+      </el-card>
+    </section>
+
+    <section v-else-if="page==='orders'">
+      <div class="page-title"><p class="eyebrow">ORDERS</p><h1>My Orders</h1><p>查询支付订单状态与解锁状态。</p></div>
+      <el-card><div class="order-search"><el-input v-model="orderIdInput" placeholder="输入订单 ID"/><el-button type="primary" @click="queryOrder">查询</el-button></div><el-table :data="orders"><el-table-column prop="order_id" label="订单ID"/><el-table-column prop="order_no" label="订单号"/><el-table-column prop="provider" label="支付渠道"/><el-table-column prop="amount" label="金额"/><el-table-column prop="currency" label="币种"/><el-table-column prop="status" label="状态"/></el-table></el-card>
+    </section>
+
+    <section v-else>
+      <div class="page-title"><p class="eyebrow">PROFILE</p><h1>My Profile</h1><p>Account, language and viewing preferences.</p></div>
+      <el-card><el-descriptions :column="1" border><el-descriptions-item label="User ID">1</el-descriptions-item><el-descriptions-item label="Country">US</el-descriptions-item><el-descriptions-item label="Language">English</el-descriptions-item><el-descriptions-item label="Timezone">UTC</el-descriptions-item></el-descriptions></el-card>
+    </section>
+  </main>
 </div>
 </template>
