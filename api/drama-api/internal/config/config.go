@@ -10,4 +10,5 @@ type Config struct {
 	DramaRpc zrpc.RpcClientConf
 	BehaviorRpc zrpc.RpcClientConf
 	RecommendRpc zrpc.RpcClientConf
+	PaymentRpc zrpc.RpcClientConf
 }
