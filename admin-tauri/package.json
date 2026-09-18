@@ -1,0 +1,1 @@
+{"name":"short-drama-admin","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"vite","build":"vite build","tauri":"tauri"},"dependencies":{"@tauri-apps/api":"^2.8.0","vite":"latest","typescript":"latest","react":"latest","react-dom":"latest"},"devDependencies":{"@vitejs/plugin-react":"latest","@tauri-apps/cli":"^2.8.0"}}
