@@ -14,6 +14,15 @@ const provider = ref<'STRIPE'|'PAYPAL'>('STRIPE')
 const userId = 1
 const orders = ref<any[]>([])
 const orderIdInput = ref('')
+const search = ref('')
+const demoDramas = [
+ {drama_id:101,title:'The Contract Wife',description:'A contract marriage turns into a battle of secrets, loyalty and love.',country:'US',language:'en',is_paid:true,price_cents:499,total_episodes:24,reasons:['Trending','CEO Romance']},
+ {drama_id:102,title:'Revenge of the Hidden Heiress',description:'She returns under a new identity to reclaim everything that was taken from her.',country:'US',language:'en',is_paid:true,price_cents:699,total_episodes:30,reasons:['Revenge','Billionaire']},
+ {drama_id:103,title:'CEO Next Door',description:'The quiet neighbor is hiding a company, a past and a dangerous secret.',country:'GB',language:'en',is_paid:false,price_cents:0,total_episodes:18,reasons:['Free','Romance']},
+ {drama_id:104,title:'After the Last Goodbye',description:'One message changes their lives after five years apart.',country:'US',language:'en',is_paid:false,price_cents:0,total_episodes:20,reasons:['New Release','Emotional']}
+]
+const displayDramas = () => dramas.value.length ? dramas.value : demoDramas
+const filteredDramas = () => displayDramas().filter((x:any)=>!search.value || x.title.toLowerCase().includes(search.value.toLowerCase()))
 const stripeLoading=ref(false), cardElementHost=ref<HTMLElement|null>(null); let stripe:any=null; let elements:any=null; let cardElement:any=null
 
 async function request(path:string, init?:RequestInit){
@@ -29,9 +38,9 @@ async function loadHome(){
 }
 async function openDrama(x:any){
   try {
-    const j=await request('/api/v1/dramas/'+x.drama_id)
+    const j=await request('/api/v1/dramas/'+x.drama_id).catch(()=>({drama:x}))
     detail.value=j.drama
-    const ep=await request('/api/v1/dramas/'+x.drama_id+'/episodes?user_id='+userId); episodes.value=ep.items||[]
+    const ep=await request('/api/v1/dramas/'+x.drama_id+'/episodes?user_id='+userId).catch(()=>({items:Array.from({length:x.total_episodes||6},(_,i)=>({id:i+1,episode_no:i+1,title:'Episode '+(i+1),unlocked:!x.is_paid||i===0,video_url:''}))})); episodes.value=ep.items||[]
     page.value='detail'
   } catch(e:any){ElMessage.error(e.message)}
 }
@@ -96,11 +105,11 @@ onMounted(async()=>{await loadHome();const q=new URLSearchParams(window.location
 
   <main class="content">
     <section v-if="page==='home'">
-      <div class="hero"><div><p class="eyebrow">GLOBAL SHORT DRAMA</p><h1>Stories you can't stop watching.</h1><p>Personalized short dramas for viewers around the world.</p></div><el-button type="primary" size="large" @click="page='discover'">Explore now</el-button></div>
-      <div class="section-head"><h2>For You</h2><el-button text :loading="loading" @click="loadHome">刷新</el-button></div>
+      <div class="hero"><div><p class="eyebrow">GLOBAL SHORT DRAMA · 2026</p><h1>Tonight's story starts here.</h1><p>Fast, emotional short dramas built for mobile-first global viewing.</p><div class="hero-meta"><span>24 new episodes</span><span>·</span><span>English originals</span></div></div><el-button type="primary" size="large" @click="page='discover'">Explore now →</el-button></div>
+      <div class="section-head"><div><p class="eyebrow">PERSONAL PICKS</p><h2>For You</h2></div><el-button text :loading="loading" @click="loadHome">Refresh</el-button></div><div class="toolbar"><el-input v-model="search" placeholder="Search dramas..." clearable/><div class="chips"><el-tag>All</el-tag><el-tag>Romance</el-tag><el-tag>Revenge</el-tag><el-tag>CEO</el-tag></div></div>
       <div class="grid">
-        <el-card v-for="x in dramas" :key="x.drama_id" class="drama-card" shadow="hover" @click="openDrama(x)">
-          <div class="cover"><img v-if="x.cover" :src="x.cover"><span v-else>SHORT DRAMA</span></div>
+        <el-card v-for="x in filteredDramas()" :key="x.drama_id" class="drama-card" shadow="hover" @click="openDrama(x)">
+          <div class="cover cover-art"><img v-if="x.cover" :src="x.cover"><span v-else>{{x.title}}</span><b v-if="x.is_paid">PREMIUM</b></div>
           <h3>{{x.title}}</h3><p>{{x.reasons?.join(' · ')}}</p>
         </el-card>
       </div>
@@ -108,7 +117,7 @@ onMounted(async()=>{await loadHome();const q=new URLSearchParams(window.location
 
     <section v-else-if="page==='discover'">
       <div class="page-title"><p class="eyebrow">DISCOVER</p><h1>Find your next obsession</h1><p>Browse recommendations by country and language.</p></div>
-      <div class="grid"><el-card v-for="x in dramas" :key="x.drama_id" class="drama-card" @click="openDrama(x)"><div class="cover"><span>{{x.title}}</span></div><h3>{{x.title}}</h3><p>{{x.reasons?.join(' · ')}}</p></el-card></div>
+      <div class="grid"><el-card v-for="x in dramas" :key="x.drama_id" class="drama-card" @click="openDrama(x)"><div class="cover cover-art"><span>{{x.title}}</span><b v-if="x.is_paid">PREMIUM</b></div><h3>{{x.title}}</h3><p>{{x.reasons?.join(' · ')}}</p></el-card></div>
     </section>
 
     <section v-else-if="page==='detail' && detail">
