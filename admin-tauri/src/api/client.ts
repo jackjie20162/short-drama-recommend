@@ -1,0 +1,1 @@
+export const API='http://127.0.0.1:8081';export async function request(path:string,init?:RequestInit){const r=await fetch(API+path,init);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.message||j.error||'请求失败');return j}
