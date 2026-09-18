@@ -37,7 +37,7 @@ FROM dramas WHERE id=? LIMIT 1`
 }
 
 func (r *MySQLDramaRepository) ListPublished(ctx context.Context, country, language string, limit, offset int) ([]*model.Drama, error) {
-	const q = `SELECT id,title,description,cover,country,language,total_episodes,is_paid,status
+	const q = `SELECT id,title,description,cover,country,language,total_episodes,is_paid,price_cents,currency,status
 FROM dramas
 WHERE status=1 AND (country=? OR country='') AND (language=? OR language='')
 ORDER BY published_at DESC, id DESC
@@ -52,7 +52,7 @@ LIMIT ? OFFSET ?`
 	for rows.Next() {
 		var d model.Drama
 		var paid int8
-		if err := rows.Scan(&d.ID, &d.Title, &d.Description, &d.Cover, &d.Country, &d.Language, &d.TotalEpisodes, &paid, &d.Status); err != nil {
+		if err := rows.Scan(&d.ID, &d.Title, &d.Description, &d.Cover, &d.Country, &d.Language, &d.TotalEpisodes, &paid, &d.PriceCents, &d.Currency, &d.Status); err != nil {
 			return nil, err
 		}
 		d.IsPaid = paid == 1
