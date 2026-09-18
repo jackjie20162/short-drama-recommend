@@ -21,6 +21,6 @@ generate_proto proto/drama.proto rpc/drama-rpc/pb
 generate_proto proto/drama_admin.proto rpc/drama-rpc/pb
 generate_proto proto/behavior.proto rpc/behavior-rpc/pb
 generate_proto proto/recommend.proto rpc/recommend-rpc/pb
- generate_proto proto/payment.proto rpc/payment-rpc/pb
+generate_proto proto/payment.proto rpc/payment-rpc/pb
 
 echo "protobuf generation completed; API gateway code is preserved"
