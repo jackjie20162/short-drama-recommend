@@ -1,10 +1,6 @@
 -- Pricing and commerce migration.
 USE short_drama;
 
-ALTER TABLE dramas
-  ADD COLUMN price_cents BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER is_paid,
-  ADD COLUMN currency VARCHAR(8) NOT NULL DEFAULT 'USD' AFTER price_cents;
-
 CREATE TABLE IF NOT EXISTS orders (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   order_no VARCHAR(64) NOT NULL,
