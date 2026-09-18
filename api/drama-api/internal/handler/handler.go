@@ -10,7 +10,7 @@ import (
 	dramapb "short-drama-recommend/rpc/drama-rpc/pb"
 	behaviorpb "short-drama-recommend/rpc/behavior-rpc/pb"
 	recommendpb "short-drama-recommend/rpc/recommend-rpc/pb"
-\tpaymentpb "short-drama-recommend/rpc/payment-rpc/pb"
+	paymentpb "short-drama-recommend/rpc/payment-rpc/pb"
 )
 
 type Handler struct { svcCtx *svc.ServiceContext }
@@ -58,6 +58,12 @@ func (h *Handler) GetDrama(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.svcCtx.Drama.GetDrama(r.Context(), &dramapb.GetDramaRequest{Id:id})
 	if err != nil { httpx.Error(w, err); return }
 	httpx.OkJson(w, resp)
+}
+
+func (h *Handler) ListEpisodes(w http.ResponseWriter,r *http.Request){
+ id,err:=strconv.ParseInt(rest.PathValue(r.Context(),"id"),10,64);if err!=nil||id<=0{httpx.Error(w,err);return}
+ q:=r.URL.Query();uid,_:=strconv.ParseInt(q.Get("user_id"),10,64)
+ resp,err:=h.svcCtx.Drama.ListEpisodes(r.Context(),&dramapb.ListEpisodesRequest{DramaId:id,UserId:uid});if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
 
 func (h *Handler) ListDrama(w http.ResponseWriter, r *http.Request) {
