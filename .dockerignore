@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.vscode
+**/*_test.go
+*.log
+tmp
+dist
+node_modules
+mysql_data
+redis_data
