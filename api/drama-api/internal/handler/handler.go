@@ -9,7 +9,7 @@ import (
 	"short-drama-recommend/api/drama-api/internal/svc"
 	dramapb "short-drama-recommend/rpc/drama-rpc/pb"
 	behaviorpb "short-drama-recommend/rpc/behavior-rpc/pb"
-	recommendpb "short-drama-recommend/rpc/recommend-rpc/pb"
+	recommendpb "short-drama-recommend/rpc/recommend-rpc/pb"\n\tpaymentpb "short-drama-recommend/rpc/payment-rpc/pb"
 )
 
 type Handler struct { svcCtx *svc.ServiceContext }
@@ -29,7 +29,7 @@ type feedReq struct {
 	PageSize int `form:"page_size,optional"`
 	Cursor string `form:"cursor,optional"`
 }
-type behaviorReq struct {
+type paymentReq struct {\n UserID int64 `json:"user_id"`\n DramaID int64 `json:"drama_id"`\n Provider string `json:"provider"`\n Currency string `json:"currency"`\n ReturnURL string `json:"return_url"`\n CancelURL string `json:"cancel_url"`\n}\ntype captureReq struct { OrderID int64 `json:"order_id"` ProviderOrderID string `json:"provider_order_id"` }\n\ntype behaviorReq struct {
 	UserID int64 `json:"user_id"`
 	DramaID int64 `json:"drama_id"`
 	EpisodeID int64 `json:"episode_id"`
@@ -76,4 +76,24 @@ func (h *Handler) RecordBehavior(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil { httpx.Error(w, err); return }
 	httpx.OkJson(w, resp)
+}
+
+
+func (h *Handler) CreatePaymentOrder(w http.ResponseWriter,r *http.Request){
+ var req paymentReq
+ if err:=httpx.Parse(r,&req);err!=nil{httpx.Error(w,err);return}
+ provider:=paymentpb.Provider_STRIPE
+ if req.Provider=="paypal"||req.Provider=="PAYPAL"{provider=paymentpb.Provider_PAYPAL}
+ resp,err:=h.svcCtx.Payment.CreateOrder(r.Context(),&paymentpb.CreateOrderRequest{UserId:req.UserID,DramaId:req.DramaID,Provider:provider,Currency:req.Currency,ReturnUrl:req.ReturnURL,CancelUrl:req.CancelURL})
+ if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
+}
+func (h *Handler) CapturePayment(w http.ResponseWriter,r *http.Request){
+ var req captureReq
+ if err:=httpx.Parse(r,&req);err!=nil{httpx.Error(w,err);return}
+ resp,err:=h.svcCtx.Payment.CapturePayment(r.Context(),&paymentpb.CapturePaymentRequest{OrderId:req.OrderID,ProviderOrderId:req.ProviderOrderID})
+ if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
+}
+func (h *Handler) GetPaymentOrder(w http.ResponseWriter,r *http.Request){
+ id,err:=strconv.ParseInt(rest.PathValue(r.Context(),"id"),10,64);if err!=nil||id<=0{httpx.Error(w,err);return}
+ resp,err:=h.svcCtx.Payment.GetOrder(r.Context(),&paymentpb.GetOrderRequest{OrderId:id});if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
