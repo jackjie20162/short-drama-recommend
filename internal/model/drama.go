@@ -10,4 +10,6 @@ type Drama struct {
 	TotalEpisodes  uint32
 	IsPaid         bool
 	Status         int8
+	PriceCents     uint64
+	Currency       string
 }
