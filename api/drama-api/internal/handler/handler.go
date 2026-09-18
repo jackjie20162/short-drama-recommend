@@ -9,7 +9,8 @@ import (
 	"short-drama-recommend/api/drama-api/internal/svc"
 	dramapb "short-drama-recommend/rpc/drama-rpc/pb"
 	behaviorpb "short-drama-recommend/rpc/behavior-rpc/pb"
-	recommendpb "short-drama-recommend/rpc/recommend-rpc/pb"\n\tpaymentpb "short-drama-recommend/rpc/payment-rpc/pb"
+	recommendpb "short-drama-recommend/rpc/recommend-rpc/pb"
+\tpaymentpb "short-drama-recommend/rpc/payment-rpc/pb"
 )
 
 type Handler struct { svcCtx *svc.ServiceContext }
@@ -29,7 +30,17 @@ type feedReq struct {
 	PageSize int `form:"page_size,optional"`
 	Cursor string `form:"cursor,optional"`
 }
-type paymentReq struct {\n UserID int64 `json:"user_id"`\n DramaID int64 `json:"drama_id"`\n Provider string `json:"provider"`\n Currency string `json:"currency"`\n ReturnURL string `json:"return_url"`\n CancelURL string `json:"cancel_url"`\n}\ntype captureReq struct { OrderID int64 `json:"order_id"` ProviderOrderID string `json:"provider_order_id"` }\n\ntype behaviorReq struct {
+type paymentReq struct {
+ UserID int64 `json:"user_id"`
+ DramaID int64 `json:"drama_id"`
+ Provider string `json:"provider"`
+ Currency string `json:"currency"`
+ ReturnURL string `json:"return_url"`
+ CancelURL string `json:"cancel_url"`
+}
+type captureReq struct { OrderID int64 `json:"order_id"` ProviderOrderID string `json:"provider_order_id"` }
+
+type behaviorReq struct {
 	UserID int64 `json:"user_id"`
 	DramaID int64 `json:"drama_id"`
 	EpisodeID int64 `json:"episode_id"`
