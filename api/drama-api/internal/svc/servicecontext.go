@@ -5,6 +5,7 @@ import (
 	behaviorpb "short-drama-recommend/rpc/behavior-rpc/pb"
 	dramapb "short-drama-recommend/rpc/drama-rpc/pb"
 	recommendpb "short-drama-recommend/rpc/recommend-rpc/pb"
+	paymentpb "short-drama-recommend/rpc/payment-rpc/pb"
 
 	"github.com/zeromicro/go-zero/zrpc"
 )
@@ -14,6 +15,7 @@ type ServiceContext struct {
 	Drama dramapb.DramaServiceClient
 	Behavior behaviorpb.BehaviorServiceClient
 	Recommend recommendpb.RecommendServiceClient
+	Payment paymentpb.PaymentServiceClient
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -22,5 +24,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Drama:dramapb.NewDramaServiceClient(zrpc.MustNewClient(c.DramaRpc).Conn()),
 		Behavior:behaviorpb.NewBehaviorServiceClient(zrpc.MustNewClient(c.BehaviorRpc).Conn()),
 		Recommend:recommendpb.NewRecommendServiceClient(zrpc.MustNewClient(c.RecommendRpc).Conn()),
+		Payment:paymentpb.NewPaymentServiceClient(zrpc.MustNewClient(c.PaymentRpc).Conn()),
 	}
 }
