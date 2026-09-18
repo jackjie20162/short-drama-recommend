@@ -20,7 +20,6 @@ async function edit(x:any){try{const v=await ElMessageBox.prompt('请输入新�
 const published=computed(()=>items.value.filter(x=>x.status===1).length)
 const paid=computed(()=>items.value.filter(x=>x.is_paid).length)
 const pendingOrders=computed(()=>orders.value.filter(x=>x.status==='PENDING').length)
-const paid=computed(()=>items.value.filter(x=>x.is_paid).length)
 onMounted(()=>{if(loggedIn.value){load();loadOrders()}})
 </script>
 <template>
