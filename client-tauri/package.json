@@ -15,7 +15,8 @@
     "vue-router": "^4.5.1",
     "vite": "^7.1.5",
     "typescript": "^5.9.2",
-    "@stripe/stripe-js": "^7.8.0"
+    "@stripe/stripe-js": "^7.8.0",
+    "hls.js": "^1.6.15"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
