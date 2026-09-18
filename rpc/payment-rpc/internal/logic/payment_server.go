@@ -2,6 +2,10 @@ package logic
 
 import (
  "bytes"
+ "crypto/hmac"
+ "crypto/sha256"
+ "encoding/hex"
+ "strconv"
  "context"
  "database/sql"
  "encoding/json"
@@ -84,3 +88,46 @@ func (s *PaymentServer) GetOrder(ctx context.Context,r *pb.GetOrderRequest)(*pb.
 }
 func providerName(p pb.Provider)string{if p==pb.Provider_PAYPAL{return "PAYPAL"};return "STRIPE"}
 var _ = sql.ErrNoRows
+
+func (s *PaymentServer) HandleWebhook(ctx context.Context,r *pb.WebhookRequest)(*pb.WebhookResponse,error){
+ provider:=strings.ToUpper(r.GetProvider())
+ switch provider{
+ case "STRIPE":
+  if !s.verifyStripeSignature(r.GetPayload(),r.GetSignature()){return nil,errors.New("invalid Stripe webhook signature")}
+  var e struct{Type string `json:"type"`;Data struct{Object struct{ID string `json:"id"`;Metadata map[string]string `json:"metadata"`;Status string `json:"status"`} `json:"object"`} `json:"data"`}
+  if err:=json.Unmarshal([]byte(r.GetPayload()),&e);err!=nil{return nil,err}
+  if e.Type=="payment_intent.succeeded"&&e.Data.Object.ID!=""{
+   if err:=s.markPaidByProvider(ctx,"STRIPE",e.Data.Object.ID);err!=nil{return nil,err}
+   return &pb.WebhookResponse{Accepted:true,Status:"PAID"},nil
+  }
+  return &pb.WebhookResponse{Accepted:true,Status:e.Type},nil
+ case "PAYPAL":
+  if err:=s.verifyPayPalWebhook(ctx,r);err!=nil{return nil,err}
+  var e struct{EventType string `json:"event_type"`;Resource struct{ID string `json:"id"`;Status string `json:"status"`} `json:"resource"`}
+  if err:=json.Unmarshal([]byte(r.GetPayload()),&e);err!=nil{return nil,err}
+  if e.EventType=="PAYMENT.CAPTURE.COMPLETED"&&e.Resource.ID!=""{
+   if err:=s.markPaidByProvider(ctx,"PAYPAL",e.Resource.ID);err!=nil{return nil,err}
+   return &pb.WebhookResponse{Accepted:true,Status:"PAID"},nil
+  }
+  return &pb.WebhookResponse{Accepted:true,Status:e.EventType},nil
+ default:return nil,errors.New("unsupported webhook provider")
+ }
+}
+func(s *PaymentServer)verifyStripeSignature(payload,sig string)bool{
+ secret:=s.svcCtx.Config.Stripe.WebhookSecret;if secret==""||sig==""{return false}
+ var ts string;var matched bool
+ for _,part:=range strings.Split(sig,","){kv:=strings.SplitN(part,"=",2);if len(kv)!=2{continue};if kv[0]=="t"{ts=kv[1]};if kv[0]=="v1"{mac:=hmac.New(sha256.New,[]byte(secret));mac.Write([]byte(ts+"."+payload));if hmac.Equal(mac.Sum(nil),mustHex(kv[1])){matched=true}}}
+ if ts==""{return false};t,err:=strconv.ParseInt(ts,10,64);if err!=nil{return false};return matched&&time.Since(time.Unix(t,0))<5*time.Minute&&time.Since(time.Unix(t,0))>-5*time.Minute
+}
+func mustHex(s string)[]byte{b,_:=hex.DecodeString(s);return b}
+func(s *PaymentServer)verifyPayPalWebhook(ctx context.Context,r *pb.WebhookRequest)error{
+ if s.svcCtx.Config.Paypal.WebhookID==""{return errors.New("PAYPAL_WEBHOOK_ID is not configured")}
+ token,err:=s.paypalToken(ctx);if err!=nil{return err}
+ body:=map[string]any{"auth_algo":r.GetAuthAlgo(),"cert_url":r.GetCertUrl(),"transmission_id":r.GetTransmissionId(),"transmission_sig":r.GetTransmissionSig(),"transmission_time":r.GetTransmissionTime(),"webhook_id":s.svcCtx.Config.Paypal.WebhookID,"webhook_event":json.RawMessage(r.GetPayload())}
+ raw,_:=json.Marshal(body);req,_:=http.NewRequestWithContext(ctx,http.MethodPost,s.paypalBase()+"/v1/notifications/verify-webhook-signature",bytes.NewReader(raw));req.Header.Set("Authorization","Bearer "+token);req.Header.Set("Content-Type","application/json")
+ resp,err:=http.DefaultClient.Do(req);if err!=nil{return err};defer resp.Body.Close();data,_:=io.ReadAll(resp.Body);if resp.StatusCode/100!=2{return fmt.Errorf("paypal webhook verification: %s",data)}
+ var out struct{VerificationStatus string `json:"verification_status"`};if err=json.Unmarshal(data,&out);err!=nil{return err};if out.VerificationStatus!="SUCCESS"{return errors.New("invalid PayPal webhook signature")};return nil
+}
+func(s *PaymentServer)markPaidByProvider(ctx context.Context,provider,providerID string)error{
+ var id int64;if err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id FROM orders WHERE provider=? AND provider_order_id=? LIMIT 1",provider,providerID).Scan(&id);err!=nil{return err};return s.markPaid(ctx,id)
+}
