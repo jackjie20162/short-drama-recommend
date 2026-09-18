@@ -20,5 +20,6 @@ func registerRoutes(server *rest.Server, svcCtx *svc.ServiceContext) {
 		{Method:http.MethodPost, Path:"/api/v1/payments/webhook", Handler:h.PaymentWebhook},
 		{Method:http.MethodPost, Path:"/api/v1/payments/capture", Handler:h.CapturePayment},
 		{Method:http.MethodGet, Path:"/api/v1/payments/orders/:id", Handler:h.GetPaymentOrder},
+		{Method:http.MethodGet, Path:"/api/v1/payments/orders", Handler:h.ListPaymentOrders},
 	})
 }
