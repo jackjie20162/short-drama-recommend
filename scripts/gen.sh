@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "\${BASH_SOURCE[0]}"/.. && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 command -v protoc >/dev/null 2>&1 || { echo "protoc is required"; exit 1; }
