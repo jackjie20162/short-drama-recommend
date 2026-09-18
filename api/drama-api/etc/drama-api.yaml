@@ -8,3 +8,5 @@ BehaviorRpc:
   Target: 127.0.0.1:9003
 RecommendRpc:
   Target: 127.0.0.1:9004
+PaymentRpc:
+  Target: 127.0.0.1:9005
