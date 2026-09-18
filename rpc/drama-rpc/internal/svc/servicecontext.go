@@ -1,7 +1,27 @@
 package svc
 
-import "short-drama-recommend/rpc/drama-rpc/internal/config"
+import (
+	"database/sql"
 
-type ServiceContext struct { Config config.Config }
+	"short-drama-recommend/internal/db"
+	"short-drama-recommend/internal/repository"
+	"short-drama-recommend/rpc/drama-rpc/internal/config"
+)
 
-func NewServiceContext(c config.Config) *ServiceContext { return &ServiceContext{Config: c} }
+type ServiceContext struct {
+	Config    config.Config
+	DB        *sql.DB
+	DramaRepo repository.DramaRepository
+}
+
+func NewServiceContext(c config.Config) *ServiceContext {
+	database, err := db.OpenMySQL(c.Mysql.DataSource)
+	if err != nil {
+		panic(err)
+	}
+	return &ServiceContext{
+		Config:    c,
+		DB:        database,
+		DramaRepo: repository.NewMySQLDramaRepository(database),
+	}
+}
