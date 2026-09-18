@@ -58,6 +58,13 @@ services:
     ports: ["9004:9004"]
     command: ["recommend-rpc", "/app/etc/recommend.yaml"]
 
+  payment-rpc:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: payment-rpc } }
+    container_name: short-drama-payment-rpc
+    depends_on: { mysql: { condition: service_healthy } }
+    ports: ["9005:9005"]
+    command: ["payment-rpc", "/app/etc/payment.yaml"]
+
   drama-api:
     build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: drama-api } }
     container_name: short-drama-drama-api
@@ -65,6 +72,7 @@ services:
       drama-rpc: { condition: service_started }
       behavior-rpc: { condition: service_started }
       recommend-rpc: { condition: service_started }
+      payment-rpc: { condition: service_started }
     ports: ["8080:8080"]
     command: ["drama-api", "/app/etc/drama-api.yaml"]
 
