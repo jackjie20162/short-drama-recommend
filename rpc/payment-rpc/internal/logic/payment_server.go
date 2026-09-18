@@ -100,10 +100,11 @@ func (s *PaymentServer) HandleWebhook(ctx context.Context,r *pb.WebhookRequest)(
   return &pb.WebhookResponse{Accepted:true,Status:e.Type},nil
  case "PAYPAL":
   if err:=s.verifyPayPalWebhook(ctx,r);err!=nil{return nil,err}
-  var e struct{EventType string `json:"event_type"`;Resource struct{ID string `json:"id"`;Status string `json:"status"`} `json:"resource"`}
+  var e struct{EventType string `json:"event_type"`;Resource struct{ID string `json:"id"`;Status string `json:"status"`;SupplementaryData struct{RelatedIDs struct{OrderID string `json:"order_id"`} `json:"related_ids"`} `json:"supplementary_data"`} `json:"resource"`}
   if err:=json.Unmarshal([]byte(r.GetPayload()),&e);err!=nil{return nil,err}
   if e.EventType=="PAYMENT.CAPTURE.COMPLETED"&&e.Resource.ID!=""{
-   if err:=s.markPaidByProvider(ctx,"PAYPAL",e.Resource.ID);err!=nil{return nil,err}
+   providerID:=e.Resource.SupplementaryData.RelatedIDs.OrderID;if providerID==""{providerID=e.Resource.ID}
+   if err:=s.markPaidByProvider(ctx,"PAYPAL",providerID);err!=nil{return nil,err}
    return &pb.WebhookResponse{Accepted:true,Status:"PAID"},nil
   }
   return &pb.WebhookResponse{Accepted:true,Status:e.EventType},nil
