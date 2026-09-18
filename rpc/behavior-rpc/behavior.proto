@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package behavior;
+option go_package = "short-drama-recommend/rpc/behavior-rpc/pb";
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  IMPRESSION = 1;
+  CLICK = 2;
+  PLAY = 3;
+  PAUSE = 4;
+  COMPLETE = 5;
+  NEXT_EPISODE = 6;
+  FAVORITE = 7;
+  LIKE = 8;
+  SHARE = 9;
+  SEARCH = 10;
+  PURCHASE = 11;
+}
+
+message RecordEventRequest {
+  int64 user_id = 1;
+  int64 drama_id = 2;
+  int64 episode_id = 3;
+  EventType event_type = 4;
+  int32 watch_seconds = 5;
+  int32 duration_seconds = 6;
+  string country = 7;
+  string language = 8;
+  string device = 9;
+}
+message RecordEventResponse { bool success = 1; }
+
+service BehaviorService {
+  rpc RecordEvent(RecordEventRequest) returns (RecordEventResponse);
+}
