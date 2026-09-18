@@ -17,6 +17,7 @@ export default createRouter({
     { path: '/watch/:dramaId/:episodeId', component: Watch },
     { path: '/checkout/:dramaId', component: Checkout },
     { path: '/orders', component: Orders },
+    { path: '/orders/:id', component: () => import('../views/orders/OrderDetail.vue') },
     { path: '/profile', component: Profile },
   ],
 })
