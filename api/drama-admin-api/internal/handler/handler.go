@@ -9,9 +9,10 @@ import(
  "github.com/zeromicro/go-zero/zrpc"
  "short-drama-recommend/api/drama-admin-api/internal/config"
  "short-drama-recommend/rpc/drama-rpc/pb"
+ "short-drama-recommend/rpc/payment-rpc/pb" 
 )
-type ServiceContext struct{Drama pb.DramaAdminServiceClient}
-func NewServiceContext(c config.Config)*ServiceContext{return &ServiceContext{Drama:pb.NewDramaAdminServiceClient(zrpc.MustNewClient(c.DramaRpc).Conn())}}
+type ServiceContext struct{Drama pb.DramaAdminServiceClient;Payment paymentpb.PaymentServiceClient}
+func NewServiceContext(c config.Config)*ServiceContext{return &ServiceContext{Drama:pb.NewDramaAdminServiceClient(zrpc.MustNewClient(c.DramaRpc).Conn()),Payment:paymentpb.NewPaymentServiceClient(zrpc.MustNewClient(c.PaymentRpc).Conn())}}
 
 func RegisterRoutes(s *rest.Server,ctx *ServiceContext){
  s.AddRoutes([]rest.Route{
@@ -21,6 +22,7 @@ func RegisterRoutes(s *rest.Server,ctx *ServiceContext){
   {Method:http.MethodPost,Path:"/api/v1/admin/dramas/:id/status",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/dramas/");if !ok{http.Error(w,"invalid id",400);return};var x pb.SetDramaStatusRequest;if readJSON(w,r,&x)!=nil{return};x.Id=id;v,e:=ctx.Drama.SetDramaStatus(r.Context(),&x);write(w,v,e)}},
   {Method:http.MethodPost,Path:"/api/v1/admin/dramas/:id/episodes",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/dramas/");if !ok{http.Error(w,"invalid id",400);return};var x pb.CreateEpisodeRequest;if readJSON(w,r,&x)!=nil{return};x.DramaId=id;v,e:=ctx.Drama.CreateEpisode(r.Context(),&x);write(w,v,e)}},
   {Method:http.MethodGet,Path:"/api/v1/admin/dramas/:id/episodes",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/dramas/");if !ok{http.Error(w,"invalid id",400);return};st:=-1;if r.URL.Query().Get("status")!=""{st,_=strconv.Atoi(r.URL.Query().Get("status"))};v,e:=ctx.Drama.ListEpisode(r.Context(),&pb.ListEpisodeRequest{DramaId:id,Status:int32(st)});write(w,v,e)}},
+  {Method:http.MethodGet,Path:"/api/v1/admin/orders",Handler:func(w http.ResponseWriter,r *http.Request){q:=r.URL.Query();page,_:=strconv.Atoi(q.Get("page"));ps,_:=strconv.Atoi(q.Get("page_size"));v,e:=ctx.Payment.ListOrders(r.Context(),&paymentpb.ListOrdersRequest{Page:int32(page),PageSize:int32(ps)});write(w,v,e)}},
   {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/status",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x pb.SetEpisodeStatusRequest;if readJSON(w,r,&x)!=nil{return};x.Id=id;v,e:=ctx.Drama.SetEpisodeStatus(r.Context(),&x);write(w,v,e)}},
  })
 }
