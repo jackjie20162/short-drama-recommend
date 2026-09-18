@@ -1,0 +1,6 @@
+package logic
+import("context";"errors";"time";"short-drama-recommend/internal/model";"short-drama-recommend/rpc/behavior-rpc/internal/svc";"short-drama-recommend/rpc/behavior-rpc/pb")
+type BehaviorServer struct{pb.UnimplementedBehaviorServiceServer;svcCtx *svc.ServiceContext}
+func NewBehaviorServer(s *svc.ServiceContext)*BehaviorServer{return &BehaviorServer{svcCtx:s}}
+func(s *BehaviorServer)RecordEvent(ctx context.Context,r *pb.RecordEventRequest)(*pb.RecordEventResponse,error){if r.GetDramaId()<=0{return nil,errors.New("drama id is required")};e:=&model.BehaviorEvent{UserID:uint64(r.GetUserId()),DramaID:uint64(r.GetDramaId()),EpisodeID:uint64(r.GetEpisodeId()),EventType:r.GetEventType().String(),WatchSeconds:uint32(nonneg2(r.GetWatchSeconds())),DurationSeconds:uint32(nonneg2(r.GetDurationSeconds())),Country:r.GetCountry(),Language:r.GetLanguage(),Device:r.GetDevice(),EventAt:time.Now().UTC()};if x:=s.svcCtx.BehaviorRepo.Record(ctx,e);x!=nil{return nil,x};_ = s.svcCtx.Redis.IncrDramaEvent(ctx,r.GetDramaId(),e.EventType);if r.GetUserId()>0{_ = s.svcCtx.Redis.SetUserRecentDrama(ctx,r.GetUserId(),r.GetDramaId())};return &pb.RecordEventResponse{Success:true},nil}
+func nonneg2(v int32)int32{if v<0{return 0};return v}
