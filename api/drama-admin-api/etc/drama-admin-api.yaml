@@ -4,3 +4,5 @@ Port: 8081
 Timeout: 5000
 DramaRpc:
   Target: 127.0.0.1:9002
+PaymentRpc:
+  Target: 127.0.0.1:9005
