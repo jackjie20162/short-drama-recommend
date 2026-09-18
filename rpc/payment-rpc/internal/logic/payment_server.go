@@ -131,8 +131,7 @@ func(s *PaymentServer)markPaidByProvider(ctx context.Context,provider,providerID
 }
 
 func(s *PaymentServer)ListOrders(ctx context.Context,r *pb.ListOrdersRequest)(*pb.ListOrdersResponse,error){
- if r.GetUserId()<=0{return nil,errors.New("user_id is required")}
- page:=int(r.GetPage());if page<1{page=1};size:=int(r.GetPageSize());if size<=0{size=20};if size>100{size=100};var total int64
+  page:=int(r.GetPage());if page<1{page=1};size:=int(r.GetPageSize());if size<=0{size=20};if size>100{size=100};var total int64
  if err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT COUNT(*) FROM orders WHERE user_id=?",r.GetUserId()).Scan(&total);err!=nil{return nil,err}
  rows,err:=s.svcCtx.DB.QueryContext(ctx,"SELECT id,user_id,drama_id,order_no,provider,provider_order_id,amount_cents,currency,status FROM orders WHERE user_id=? ORDER BY id DESC LIMIT ? OFFSET ?",r.GetUserId(),size,(page-1)*size);if err!=nil{return nil,err};defer rows.Close()
  out:=&pb.ListOrdersResponse{Items:make([]*pb.GetOrderResponse,0),Total:total};for rows.Next(){var x pb.GetOrderResponse;var cents int64;if err:=rows.Scan(&x.OrderId,&x.UserId,&x.DramaId,&x.OrderNo,&x.Provider,&x.ProviderOrderId,&cents,&x.Currency,&x.Status);err!=nil{return nil,err};x.Amount=fmt.Sprintf("%.2f",float64(cents)/100);out.Items=append(out.Items,&x)};return out,rows.Err()
