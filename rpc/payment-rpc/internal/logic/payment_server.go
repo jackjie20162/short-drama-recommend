@@ -85,7 +85,6 @@ func (s *PaymentServer) GetOrder(ctx context.Context,r *pb.GetOrderRequest)(*pb.
  err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id,user_id,drama_id,order_no,provider,provider_order_id,amount_cents,currency,status FROM orders WHERE id=?",r.GetOrderId()).Scan(&x.OrderId,&x.UserId,&x.DramaId,&x.OrderNo,&x.Provider,&x.ProviderOrderId,&cents,&x.Currency,&x.Status);if err!=nil{return nil,err};x.Amount=fmt.Sprintf("%.2f",float64(cents)/100);return &x,nil
 }
 func providerName(p pb.Provider)string{if p==pb.Provider_PAYPAL{return "PAYPAL"};return "STRIPE"}
-var _ = sql.ErrNoRows
 
 func (s *PaymentServer) HandleWebhook(ctx context.Context,r *pb.WebhookRequest)(*pb.WebhookResponse,error){
  provider:=strings.ToUpper(r.GetProvider())
