@@ -9,7 +9,7 @@ func(s *DramaServer)ListEpisodes(ctx context.Context,req *pb.ListEpisodesRequest
  o:=&pb.ListEpisodesResponse{Items:make([]*pb.Episode,0,len(es))}
  unlocked:=false
  if req.GetUserId()>0{_ = s.svcCtx.DB.QueryRowContext(ctx,"SELECT EXISTS(SELECT 1 FROM user_entitlements WHERE user_id=? AND drama_id=?)",req.GetUserId(),req.GetDramaId()).Scan(&unlocked)}
- for _,x:=range es{p:=toPBEpisode(x);p.Unlocked=!x.IsPaid||unlocked;if x.IsPaid&&!p.Unlocked{p.VideoUrl=""};o.Items=append(o.Items,p)}
+ for _,x:=range es{p:=toPBPublicEpisode(x,!x.IsPaid||unlocked);if x.IsPaid&&!p.Unlocked{p.VideoUrl=""};o.Items=append(o.Items,p)}
  return o,nil
 }
 func(s *DramaServer)ListDrama(ctx context.Context,req *pb.ListDramaRequest)(*pb.ListDramaResponse,error){p:=int(req.GetPage());if p<1{p=1};n:=int(req.GetPageSize());if n<=0{n=20};if n>100{n=100};ds,e:=s.svcCtx.DramaRepo.ListPublished(ctx,req.GetCountry(),req.GetLanguage(),n,(p-1)*n);if e!=nil{return nil,e};o:=&pb.ListDramaResponse{Items:make([]*pb.Drama,0,len(ds))};for _,d:=range ds{o.Items=append(o.Items,toPBDrama(d))};return o,nil}
