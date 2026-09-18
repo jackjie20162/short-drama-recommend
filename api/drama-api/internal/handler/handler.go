@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"io"
 	"strconv"
 
 	"github.com/zeromicro/go-zero/rest"
@@ -95,6 +96,13 @@ func (h *Handler) RecordBehavior(w http.ResponseWriter, r *http.Request) {
 	httpx.OkJson(w, resp)
 }
 
+
+func (h *Handler) PaymentWebhook(w http.ResponseWriter,r *http.Request){
+ body,err:=io.ReadAll(r.Body);if err!=nil{httpx.Error(w,err);return};defer r.Body.Close()
+ provider:=r.Header.Get("X-Payment-Provider");if provider==""{provider=r.URL.Query().Get("provider")}
+ req:=&paymentpb.WebhookRequest{Provider:provider,Payload:string(body),Signature:r.Header.Get("Stripe-Signature"),TransmissionId:r.Header.Get("PAYPAL-TRANSMISSION-ID"),TransmissionTime:r.Header.Get("PAYPAL-TRANSMISSION-TIME"),CertUrl:r.Header.Get("PAYPAL-CERT-URL"),AuthAlgo:r.Header.Get("PAYPAL-AUTH-ALGO"),TransmissionSig:r.Header.Get("PAYPAL-TRANSMISSION-SIG")}
+ resp,err:=h.svcCtx.Payment.HandleWebhook(r.Context(),req);if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
+}
 
 func (h *Handler) CreatePaymentOrder(w http.ResponseWriter,r *http.Request){
  var req paymentReq
