@@ -1,0 +1,82 @@
+syntax = "v1"
+
+type Drama {
+  Id int64 `json:"id"`
+  Title string `json:"title"`
+  Description string `json:"description"`
+  Cover string `json:"cover"`
+  Country string `json:"country"`
+  Language string `json:"language"`
+  TotalEpisodes int `json:"total_episodes"`
+  IsPaid bool `json:"is_paid"`
+}
+
+type GetDramaResp {
+  Drama Drama `json:"drama"`
+}
+
+type ListDramaResp {
+  Items []Drama `json:"items"`
+}
+
+type FeedItem {
+  DramaId int64 `json:"drama_id"`
+  Title string `json:"title"`
+  Cover string `json:"cover"`
+  Score float32 `json:"score"`
+  Reasons []string `json:"reasons"`
+}
+
+type FeedResp {
+  Items []FeedItem `json:"items"`
+  NextCursor string `json:"next_cursor"`
+}
+
+type RecordBehaviorReq {
+  UserId int64 `json:"user_id"`
+  DramaId int64 `json:"drama_id"`
+  EpisodeId int64 `json:"episode_id"`
+  EventType string `json:"event_type"`
+  WatchSeconds int `json:"watch_seconds"`
+  DurationSeconds int `json:"duration_seconds"`
+  Country string `json:"country"`
+  Language string `json:"language"`
+  Device string `json:"device"`
+}
+
+type RecordBehaviorResp {
+  Success bool `json:"success"`
+}
+
+service DramaAPI {
+  @handler(GetDrama)
+  get /api/v1/dramas/:id (GetDramaReq) returns (GetDramaResp)
+
+  @handler(ListDrama)
+  get /api/v1/dramas (ListDramaReq) returns (ListDramaResp)
+
+  @handler(GetFeed)
+  get /api/v1/feed (FeedReq) returns (FeedResp)
+
+  @handler(RecordBehavior)
+  post /api/v1/behaviors (RecordBehaviorReq) returns (RecordBehaviorResp)
+}
+
+type GetDramaReq {
+  Id int64 `path:"id"`
+}
+
+type ListDramaReq {
+  Country string `form:"country,optional"`
+  Language string `form:"language,optional"`
+  Page int `form:"page,optional"`
+  PageSize int `form:"page_size,optional"`
+}
+
+type FeedReq {
+  UserId int64 `form:"user_id,optional"`
+  Country string `form:"country,optional"`
+  Language string `form:"language,optional"`
+  PageSize int `form:"page_size,optional"`
+  Cursor string `form:"cursor,optional"`
+}
