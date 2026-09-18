@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package payment;
+option go_package = "short-drama-recommend/rpc/payment-rpc/pb";
+
+enum Provider { PROVIDER_UNSPECIFIED = 0; STRIPE = 1; PAYPAL = 2; }
+
+message CreateOrderRequest {
+  int64 user_id = 1;
+  int64 drama_id = 2;
+  string currency = 3;
+  Provider provider = 4;
+  string return_url = 5;
+  string cancel_url = 6;
+}
+message CreateOrderResponse {
+  int64 order_id = 1;
+  string order_no = 2;
+  string provider_order_id = 3;
+  string client_secret = 4;
+  string approve_url = 5;
+  string status = 6;
+  string amount = 7;
+  string currency = 8;
+}
+message CapturePaymentRequest { int64 order_id = 1; string provider_order_id = 2; }
+message CapturePaymentResponse { int64 order_id = 1; string status = 2; }
+message GetOrderRequest { int64 order_id = 1; }
+message GetOrderResponse {
+  int64 order_id = 1; int64 user_id = 2; int64 drama_id = 3;
+  string order_no = 4; string provider = 5; string provider_order_id = 6;
+  string amount = 7; string currency = 8; string status = 9;
+}
+service PaymentService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc CapturePayment(CapturePaymentRequest) returns (CapturePaymentResponse);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+}
