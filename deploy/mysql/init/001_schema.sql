@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS dramas (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_status_published (status, published_at),
-  KEY idx_country_language (country, language)
+  KEY idx_country_language (country, language),
+  UNIQUE KEY uk_drama_identity (title, country, language)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS episodes (
