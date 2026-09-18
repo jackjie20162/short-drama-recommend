@@ -26,6 +26,8 @@ message CreateOrderResponse {
 message CapturePaymentRequest { int64 order_id = 1; string provider_order_id = 2; }
 message CapturePaymentResponse { int64 order_id = 1; string status = 2; }
 message GetOrderRequest { int64 order_id = 1; }
+message WebhookRequest { string provider=1; string payload=2; string signature=3; string transmission_id=4; string transmission_time=5; string cert_url=6; string auth_algo=7; string transmission_sig=8; string webhook_id=9; }
+message WebhookResponse { bool accepted=1; string status=2; }
 message GetOrderResponse {
   int64 order_id = 1; int64 user_id = 2; int64 drama_id = 3;
   string order_no = 4; string provider = 5; string provider_order_id = 6;
@@ -35,4 +37,5 @@ service PaymentService {
   rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
   rpc CapturePayment(CapturePaymentRequest) returns (CapturePaymentResponse);
   rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc HandleWebhook(WebhookRequest) returns (WebhookResponse);
 }
