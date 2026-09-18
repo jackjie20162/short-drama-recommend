@@ -1,0 +1,10 @@
+Name: payment-rpc
+ListenOn: 0.0.0.0:9005
+Mysql:
+  DataSource: root:root@tcp(127.0.0.1:3307)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
+Stripe:
+  SecretKey: ""
+Paypal:
+  ClientID: ""
+  ClientSecret: ""
+  Env: sandbox
