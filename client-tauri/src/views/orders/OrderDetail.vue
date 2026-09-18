@@ -1,0 +1,6 @@
+<script setup lang="ts">
+import {onMounted,ref} from 'vue';import{useRoute,useRouter}from'vue-router';import{request}from'../../api/client'
+const route=useRoute(),router=useRouter(),order=ref<any>(null),loading=ref(true)
+onMounted(async()=>{try{order.value=await request('/api/v1/payments/orders/'+route.params.id)}finally{loading.value=false}})
+</script>
+<template><section><el-button text @click="router.push('/orders')">← 我的订单</el-button><div class="page-title"><p class="eyebrow">ORDER DETAIL</p><h1>订单详情</h1></div><el-card v-loading="loading" v-if="order"><el-descriptions :column="1" border><el-descriptions-item label="订单号">{{order.order_no}}</el-descriptions-item><el-descriptions-item label="短剧 ID">{{order.drama_id}}</el-descriptions-item><el-descriptions-item label="支付渠道">{{order.provider}}</el-descriptions-item><el-descriptions-item label="金额">{{order.amount}} {{order.currency}}</el-descriptions-item><el-descriptions-item label="状态"><el-tag :type="order.status==='PAID'?'success':'warning'">{{order.status}}</el-tag></el-descriptions-item></el-descriptions><el-button v-if="order.status==='PAID'" type="primary" class="pay-btn" @click="router.push('/drama/'+order.drama_id)">进入短剧</el-button></el-card><el-empty v-else-if="!loading" description="订单不存在"/></section></template>
