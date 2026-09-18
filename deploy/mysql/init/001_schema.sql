@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_external_id (external_id),
-  KEY idx_country_language (country, language)
+  KEY idx_country_language (country, language),
+  UNIQUE KEY uk_drama_identity (title, country, language)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS dramas (
