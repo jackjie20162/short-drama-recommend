@@ -40,7 +40,7 @@ async function buy(){
   try {
     const j=await request('/api/v1/payments/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       user_id:userId, drama_id:detail.value.id, provider:provider.value, currency:'USD',
-      return_url:'http://127.0.0.1:1421/?payment=success&order_id='+payment.value?.order_id, cancel_url:'http://127.0.0.1:1421/?payment=cancel&order_id='+detail.value.id
+      return_url:'http://127.0.0.1:1421/?payment=success', cancel_url:'http://127.0.0.1:1421/?payment=cancel'
     })})
     payment.value=j
     if(provider.value==='PAYPAL' && j.approve_url) window.open(j.approve_url,'_blank')
