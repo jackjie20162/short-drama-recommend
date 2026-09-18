@@ -14,7 +14,7 @@ const provider = ref<'STRIPE'|'PAYPAL'>('STRIPE')
 const userId = 1
 const orders = ref<any[]>([])
 const orderIdInput = ref('')
-const cardNumber=ref(''), cardExpiry=ref(''), cardCvc=ref(''), stripeLoading=ref(false)
+const stripeLoading=ref(false), cardElementHost=ref<HTMLElement|null>(null); let stripe:any=null; let elements:any=null; let cardElement:any=null
 
 async function request(path:string, init?:RequestInit){
   const r = await fetch(API + path, init)
@@ -46,11 +46,17 @@ async function buy(){
     if(provider.value==='PAYPAL' && j.approve_url) window.open(j.approve_url,'_blank')
     ElMessage.success('订单已创建')
     page.value='checkout'
+    if(provider.value==='STRIPE') setTimeout(mountStripe,50)
   } catch(e:any){ElMessage.error(e.message)}
 }
 function watchEpisode(e:any){
   if(!e.unlocked){ ElMessage.info('该集需要购买本剧后解锁'); return }
   if(e.video_url) window.open(e.video_url,'_blank'); else ElMessage.warning('暂无视频地址')
+}
+async function mountStripe(){
+ const key=(import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY;if(!key||!cardElementHost.value)return
+ stripe=await loadStripe(key);if(!stripe)return
+ elements=stripe.elements();cardElement=elements.create('card');cardElement.mount(cardElementHost.value)
 }
 async function payStripe(){
  if(!payment.value?.client_secret){ElMessage.error('Stripe PaymentIntent 尚未创建');return}
@@ -59,7 +65,7 @@ async function payStripe(){
  stripeLoading.value=true
  try{
   const stripe=await loadStripe(key);if(!stripe)throw Error('Stripe.js 加载失败')
-  const result=await stripe.confirmCardPayment(payment.value.client_secret,{payment_method:{card:{number:cardNumber.value,exp_month:Number(cardExpiry.value.split('/')[0]),exp_year:Number(cardExpiry.value.split('/')[1]),cvc:cardCvc.value}}})
+  const result=await stripe.confirmCardPayment(payment.value.client_secret,{payment_method:{card:cardElement}})
   if(result.error)throw Error(result.error.message||'Stripe 支付失败')
   ElMessage.success('Stripe 支付成功，等待订单确认')
   await queryOrderById(payment.value.order_id)
@@ -68,11 +74,11 @@ async function payStripe(){
 async function queryOrderById(id:number){const j=await request('/api/v1/payments/orders/'+id);orders.value=[j];return j}
 function openPaypal(){if(payment.value?.approve_url)window.open(payment.value.approve_url,'_blank')}
 async function queryOrder(){
-  if(!orderIdInput.value) return
+  if(!orderIdInput.value){try{const j=await request('/api/v1/payments/orders?user_id='+userId+'&page=1&page_size=50');orders.value=j.items||[]}catch(e:any){ElMessage.error(e.message)};return}
   try { const j=await request('/api/v1/payments/orders/'+orderIdInput.value); orders.value=[j] }
   catch(e:any){ElMessage.error(e.message)}
 }
-onMounted(async()=>{await loadHome();const q=new URLSearchParams(window.location.search);if(q.get('payment')==='success'&&q.get('order_id')&&q.get('token')){try{const j=await request('/api/v1/payments/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:Number(q.get('order_id')),provider_order_id:q.get('token')})});ElMessage.success('PayPal 支付状态：'+j.status)}catch(e:any){ElMessage.error(e.message)}}})
+onMounted(async()=>{await loadHome();const q=new URLSearchParams(window.location.search);if(q.get('payment')==='success'&&q.get('token')){try{const j=await request('/api/v1/payments/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:0,provider_order_id:q.get('token')})});ElMessage.success('PayPal 支付状态：'+j.status)}catch(e:any){ElMessage.error(e.message)}}})
 </script>
 
 <template>
@@ -124,7 +130,7 @@ onMounted(async()=>{await loadHome();const q=new URLSearchParams(window.location
         <el-alert v-if="provider==='STRIPE'" title="Stripe 支付" description="订单创建后将返回 PaymentIntent client_secret；下一步接入 Stripe.js 完成卡支付。" type="info" show-icon/>
         <el-alert v-else title="PayPal Sandbox" description="创建订单后打开 PayPal 授权页面，授权完成后回到本客户端并执行 Capture。" type="info" show-icon/>
         <el-button type="primary" size="large" class="pay-btn" @click="buy">创建 {{provider}} 支付订单</el-button>
-        <div v-if="payment?.client_secret" class="card-box"><el-input v-model="cardNumber" placeholder="Card number (Sandbox: 4242 4242 4242 4242)"/><div class="card-row"><el-input v-model="cardExpiry" placeholder="MM/YY"/><el-input v-model="cardCvc" placeholder="CVC"/></div><el-button type="success" :loading="stripeLoading" @click="payStripe">确认 Stripe 支付</el-button></div>
+        <div v-if="payment?.client_secret" class="card-box"><div ref="cardElementHost" class="stripe-card"></div><el-button type="success" :loading="stripeLoading" @click="payStripe">确认 Stripe 支付</el-button></div>
         <div v-if="payment" class="payment-result"><p>订单号：{{payment.order_no}}</p><p>状态：{{payment.status}}</p><p v-if="payment.client_secret">PaymentIntent：{{payment.provider_order_id}}</p><el-button v-if="payment.approve_url" type="success" @click="openPaypal">打开 PayPal</el-button></div>
       </el-card>
     </section>
