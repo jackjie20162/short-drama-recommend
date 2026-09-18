@@ -17,7 +17,7 @@ type MySQLDramaAdminRepository struct{db *sql.DB}
 func NewMySQLDramaAdminRepository(db *sql.DB) DramaAdminRepository{return &MySQLDramaAdminRepository{db}}
 
 func(r *MySQLDramaAdminRepository)Create(ctx context.Context,d *model.Drama)error{
- res,err:=r.db.ExecContext(ctx,"INSERT INTO dramas (title,description,cover,country,language,total_episodes,is_paid,status) VALUES (?,?,?,?,?,?,?,0)",d.Title,d.Description,d.Cover,d.Country,d.Language,d.TotalEpisodes,d.IsPaid,d.PriceCents,d.Currency);if err!=nil{return err};id,err:=res.LastInsertId();if err!=nil{return err};d.ID=uint64(id);return nil
+ res,err:=r.db.ExecContext(ctx,"INSERT INTO dramas (title,description,cover,country,language,total_episodes,is_paid,price_cents,currency,status) VALUES (?,?,?,?,?,?,?,?,?,0)",d.Title,d.Description,d.Cover,d.Country,d.Language,d.TotalEpisodes,d.IsPaid,d.PriceCents,d.Currency);if err!=nil{return err};id,err:=res.LastInsertId();if err!=nil{return err};d.ID=uint64(id);return nil
 }
 func(r *MySQLDramaAdminRepository)Update(ctx context.Context,d *model.Drama)error{
  _,err:=r.db.ExecContext(ctx,"UPDATE dramas SET title=?,description=?,cover=?,country=?,language=?,total_episodes=?,is_paid=?,price_cents=?,currency=? WHERE id=?",d.Title,d.Description,d.Cover,d.Country,d.Language,d.TotalEpisodes,d.IsPaid,d.PriceCents,d.Currency,d.ID);return err
