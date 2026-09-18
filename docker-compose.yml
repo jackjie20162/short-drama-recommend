@@ -68,6 +68,14 @@ services:
     ports: ["8080:8080"]
     command: ["drama-api", "/app/etc/drama-api.yaml"]
 
+  drama-admin-api:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: drama-admin-api } }
+    container_name: short-drama-drama-admin-api
+    depends_on:
+      drama-rpc: { condition: service_started }
+    ports: ["8081:8081"]
+    command: ["drama-admin-api", "/app/etc/drama-admin-api.yaml"]
+
 volumes:
   mysql_data:
   redis_data:
