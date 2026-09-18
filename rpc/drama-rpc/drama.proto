@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package drama;
+option go_package = "short-drama-recommend/rpc/drama-rpc/pb";
+
+message Drama {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+  string cover = 4;
+  string country = 5;
+  string language = 6;
+  int32 total_episodes = 7;
+  bool is_paid = 8;
+}
+
+message GetDramaRequest { int64 id = 1; }
+message GetDramaResponse { Drama drama = 1; }
+message ListDramaRequest { string country = 1; string language = 2; int32 page = 3; int32 page_size = 4; }
+message ListDramaResponse { repeated Drama items = 1; }
+
+service DramaService {
+  rpc GetDrama(GetDramaRequest) returns (GetDramaResponse);
+  rpc ListDrama(ListDramaRequest) returns (ListDramaResponse);
+}
