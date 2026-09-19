@@ -26,11 +26,18 @@ gen: gen-api gen-rpc gen-ent
 	@echo "go-zero API/RPC and Ent generation completed"
 
 gen-api:
+	goctl api go -api api/auth.api -dir ./api/auth-api
 	goctl api go -api api/drama.api -dir ./api/drama-api
+	goctl api go -api api/drama-admin.api -dir ./api/drama-admin-api
 	@echo "go-zero API generation completed"
 
+ifeq ($(OS),Windows_NT)
 gen-rpc:
-	./scripts/gen.sh
+	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gen-rpc.ps1
+else
+gen-rpc:
+	bash scripts/gen.sh
+endif
 	@echo "go-zero RPC generation completed"
 
 gen-ent:
