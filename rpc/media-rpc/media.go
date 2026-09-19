@@ -1,0 +1,3 @@
+package main
+import ("flag";"fmt";"github.com/zeromicro/go-zero/core/conf";"github.com/zeromicro/go-zero/zrpc";"google.golang.org/grpc";"short-drama-recommend/rpc/media-rpc/internal/config";"short-drama-recommend/rpc/media-rpc/internal/logic";"short-drama-recommend/rpc/media-rpc/internal/svc";"short-drama-recommend/rpc/media-rpc/pb")
+func main(){f:=flag.String("f","etc/media.yaml","config file");flag.Parse();var c config.Config;conf.MustLoad(*f,&c);ctx:=svc.NewServiceContext(c);server:=zrpc.MustNewServer(c.RpcServerConf,func(g *grpc.Server){pb.RegisterMediaServiceServer(g,logic.NewMediaServer(ctx))});defer server.Stop();fmt.Printf("Starting media rpc at %s...\n",c.ListenOn);server.Start()}
