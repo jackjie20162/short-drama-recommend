@@ -107,3 +107,14 @@ RecommendationFeature
 6. 接入训练/评估流程，再进入 rank-rpc。
 7. 每一步继续追加本文件，记录代码、数据库、验证结果和 Git commit。
 \n\n## 2026-09-19 — V1.2 Drama Repository 内容字段落地\n\n### 本次落地\n\n- `internal/repository/drama.go`：GetByID/ListPublished 读取 subtitle、popularity、completion_rate、pay_rate、published_at、genres、tags。\n- `rpc/drama-rpc/internal/logic/convert.go`：gRPC Drama 响应输出新增内容语义字段与指标；剧集响应输出 description。\n- genres/tags 使用聚合查询，业务库仍作为 source of truth。\n\n### 兼容处理\n\n- published_at 使用 NULL-safe 扫描。\n- 原有 Proto 字段编号不变，仅使用已新增字段。\n\n### 验证状态\n\n- 已完成 GitHub 静态代码检查。\n- 尚未声称用户本地 `go test ./...`、`protoc` 或 Docker E2E 已通过。\n\n### 下一步\n\n1. 建立 Content Indexer：MySQL Drama -> Elasticsearch。\n2. 增加 ES bulk/upsert/delete 与增量同步模型。\n3. 接入 Feature Builder，形成用户侧 + 内容侧特征。\n
+
+## V1.3 — Simple Admin Ent ORM 基础设施
+
+- 按用户提供的 Simple Admin Makefile 对齐 Ent 生成规范。
+- 新增 `rpc/ent/schema/`：Drama、Episode、Genre、Tag、DramaGenre、DramaTag、User、BehaviorEvent、UserTagProfile。
+- 复制 Simple Admin Ent templates：`pagination.tmpl`、`set_not_nil.tmpl`。
+- Makefile 新增 `gen-ent`，使用 `goctls run -mod=mod entgo.io/ent/cmd/ent generate`。
+- go.mod 增加 Ent ORM 依赖。
+- 第一阶段不启用 Ent 自动迁移，继续以 deploy/mysql/init SQL 为数据库结构来源。
+- 当前环境没有执行 `make gen-ent` 或 `go test ./...`，因此不声称生成代码或测试已经通过。
+- 下一步：本地生成 Ent client 后，把 Drama/Episode/Entitlement Repository 切换到 Ent，再进入 Elasticsearch Content Indexer。
