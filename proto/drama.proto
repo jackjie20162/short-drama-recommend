@@ -14,13 +14,34 @@ message Drama {
   bool is_paid = 8;
   int64 price_cents = 9;
   string currency = 10;
+  string subtitle = 11;
+  repeated string genres = 12;
+  repeated string tags = 13;
+  double popularity = 14;
+  double completion_rate = 15;
+  double pay_rate = 16;
+  string published_at = 17;
 }
 
 message GetDramaRequest { int64 id = 1; }
 message GetDramaResponse { Drama drama = 1; }
 message ListDramaRequest { string country = 1; string language = 2; int32 page = 3; int32 page_size = 4; }
 message ListDramaResponse { repeated Drama items = 1; }
-message DramaEpisode { int64 id=1; int64 drama_id=2; int32 episode_no=3; string title=4; int32 duration_seconds=5; string video_url=6; string poster_url=7; bool is_paid=8; int32 status=9; bool unlocked=10; }
+
+message DramaEpisode {
+  int64 id=1;
+  int64 drama_id=2;
+  int32 episode_no=3;
+  string title=4;
+  int32 duration_seconds=5;
+  string video_url=6;
+  string poster_url=7;
+  bool is_paid=8;
+  int32 status=9;
+  bool unlocked=10;
+  string description=11;
+}
+
 message ListEpisodesRequest { int64 drama_id=1; int64 user_id=2; }
 message ListEpisodesResponse { repeated DramaEpisode items=1; }
 
