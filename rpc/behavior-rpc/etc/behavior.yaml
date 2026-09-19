@@ -3,6 +3,6 @@ ListenOn: 0.0.0.0:9003
 Timeout: 3000
 Mysql:
   DataSource: root:root@tcp(127.0.0.1:3307)/short_drama?charset=utf8mb4&parseTime=true&loc=UTC
-Redis:
+CacheRedis:
   Host: 127.0.0.1:6380
   Pass:
