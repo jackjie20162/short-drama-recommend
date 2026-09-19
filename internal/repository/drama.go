@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"strings"
-	"time"
 
 	"short-drama-recommend/internal/model"
 )
@@ -103,4 +102,3 @@ LIMIT ? OFFSET ?`, country, language, limit, offset)
 	return result, nil
 }
 
-var _ = time.Time{}
