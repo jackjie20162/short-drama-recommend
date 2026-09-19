@@ -12,10 +12,14 @@ command -v protoc-gen-go-grpc >/dev/null 2>&1 || { echo "protoc-gen-go-grpc is r
 generate_rpc() {
   local proto="$1"
   local out="$2"
+
+  echo "Generating RPC: $proto -> $out"
+
   mkdir -p "$out/pb"
-  goctl rpc protoc "$proto" \\
-    --go_out="$out/pb" \\
-    --go-grpc_out="$out/pb" \\
+
+  goctl rpc protoc "$proto" \
+    --go_out="$out/pb" \
+    --go-grpc_out="$out/pb" \
     --zrpc_out="$out"
 }
 
