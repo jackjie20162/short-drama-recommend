@@ -1,0 +1,14 @@
+syntax = "proto3";
+package media;
+option go_package = "short-drama-recommend/rpc/media-rpc/pb";
+service MediaService {
+  rpc CreateUpload(CreateUploadRequest) returns (CreateUploadResponse);
+  rpc CompleteUpload(CompleteUploadRequest) returns (MediaAsset);
+  rpc GetPlayback(GetPlaybackRequest) returns (PlaybackResponse);
+}
+message CreateUploadRequest { int64 drama_id=1; int64 episode_id=2; string country=3; string language=4; string filename=5; string content_type=6; string provider=7; }
+message CreateUploadResponse { string provider=1; string object_key=2; string upload_url=3; string playback_url=4; int64 expires_seconds=5; }
+message CompleteUploadRequest { int64 drama_id=1; int64 episode_id=2; string provider=3; string object_key=4; int64 size_bytes=5; string checksum=6; }
+message MediaAsset { string provider=1; string object_key=2; string playback_url=3; string status=4; }
+message GetPlaybackRequest { int64 episode_id=1; int64 user_id=2; }
+message PlaybackResponse { string url=1; string format=2; int64 expires_seconds=3; }
