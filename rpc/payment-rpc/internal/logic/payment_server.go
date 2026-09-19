@@ -51,7 +51,7 @@ func (s *PaymentServer) CreateOrder(ctx context.Context,r *pb.CreateOrderRequest
 }
 
 func (s *PaymentServer) createStripe(ctx context.Context,cents int64,currency,orderNo string)(string,string,error){
- if s.setting("stripe_secret_key",s.svcCtx.Config.Stripe.SecretKey)==""{return "","",errors.New("STRIPE_SECRET_KEY is not configured")}
+ key:=s.setting("stripe_secret_key",s.svcCtx.Config.Stripe.SecretKey);if key==""{return "","",errors.New("STRIPE_SECRET_KEY is not configured")}
  form:=url.Values{};form.Set("amount",strconv.FormatInt(cents,10));form.Set("currency",strings.ToLower(currency));form.Set("metadata[order_no]",orderNo)
  req,_:=http.NewRequestWithContext(ctx,http.MethodPost,"https://api.stripe.com/v1/payment_intents",strings.NewReader(form.Encode()));req.SetBasicAuth(key,"");req.Header.Set("Content-Type","application/x-www-form-urlencoded")
  resp,err:=http.DefaultClient.Do(req);if err!=nil{return "","",err};defer resp.Body.Close();body,_:=io.ReadAll(resp.Body);if resp.StatusCode/100!=2{return "","",fmt.Errorf("stripe: %s",body)}
