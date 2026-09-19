@@ -6,3 +6,5 @@ DramaRpc:
   Target: 127.0.0.1:9002
 PaymentRpc:
   Target: 127.0.0.1:9005
+Mysql:
+  DataSource: root:root@tcp(mysql:3306)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
