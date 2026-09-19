@@ -16,6 +16,7 @@ enum EventType {
   SHARE = 9;
   SEARCH = 10;
   PURCHASE = 11;
+  WATCH_PROGRESS = 12;
 }
 
 message RecordEventRequest {
@@ -28,6 +29,8 @@ message RecordEventRequest {
   string country = 7;
   string language = 8;
   string device = 9;
+  string source = 10;
+  string request_id = 11;
 }
 message RecordEventResponse { bool success = 1; }
 
