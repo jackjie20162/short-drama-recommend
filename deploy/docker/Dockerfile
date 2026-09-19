@@ -12,7 +12,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/$SERVIC
 FROM alpine:3.20
 ARG SERVICE
 WORKDIR /app
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates ffmpeg
 COPY --from=builder /out/$SERVICE /app/$SERVICE
 COPY --from=builder /src/$SERVICE/etc /app/etc
 COPY deploy/docker/entrypoint.sh /app/entrypoint.sh
