@@ -3,6 +3,7 @@ package model
 import "time"
 
 type BehaviorEvent struct {
+	ID             uint64
 	UserID         uint64
 	DramaID        uint64
 	EpisodeID      uint64
@@ -12,5 +13,7 @@ type BehaviorEvent struct {
 	Country        string
 	Language       string
 	Device         string
+	Source         string
+	RequestID      string
 	EventAt        time.Time
 }
