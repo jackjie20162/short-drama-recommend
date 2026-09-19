@@ -1,0 +1,4 @@
+Name: media-rpc
+ListenOn: 0.0.0.0:9006
+Mysql:
+  DataSource: root:root@tcp(mysql:3306)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
