@@ -14,6 +14,13 @@ type Drama struct {
 	SeenBy map[string]bool `json:"seen_by,omitempty"`
 }
 
+type Query struct {
+	UserID string
+	Region string
+	Lang string
+	SeenIDs []int64
+}
+
 func Seeds() []Drama {
 	return []Drama{
 		{1,"Contract Wife","/covers/1.jpg","0","en","published",0.91,0.82,0.35,1720000000,map[string]bool{"u1":true}},
