@@ -17,7 +17,15 @@ import (
  "time"
  "short-drama-recommend/rpc/payment-rpc/internal/svc"
  "short-drama-recommend/rpc/payment-rpc/pb"
+ "short-drama-recommend/internal/settings"
 )
+
+func (s *PaymentServer) setting(key, fallback string) string {
+ var value string; var secret int
+ err:=s.svcCtx.DB.QueryRow("SELECT setting_value,is_secret FROM system_settings WHERE setting_group='payment' AND setting_key=? LIMIT 1",key).Scan(&value,&secret)
+ if err==nil && value!="" { if secret==1 { if plain,e:=settings.Decrypt(value);e==nil{return plain} }; return value }
+ return fallback
+}
 
 type PaymentServer struct { pb.UnimplementedPaymentServiceServer; svcCtx *svc.ServiceContext }
 func NewPaymentServer(svcCtx *svc.ServiceContext) *PaymentServer { return &PaymentServer{svcCtx:svcCtx} }
@@ -43,16 +51,16 @@ func (s *PaymentServer) CreateOrder(ctx context.Context,r *pb.CreateOrderRequest
 }
 
 func (s *PaymentServer) createStripe(ctx context.Context,cents int64,currency,orderNo string)(string,string,error){
- if s.svcCtx.Config.Stripe.SecretKey==""{return "","",errors.New("STRIPE_SECRET_KEY is not configured")}
+ if s.setting("stripe_secret_key",s.svcCtx.Config.Stripe.SecretKey)==""{return "","",errors.New("STRIPE_SECRET_KEY is not configured")}
  form:=url.Values{};form.Set("amount",strconv.FormatInt(cents,10));form.Set("currency",strings.ToLower(currency));form.Set("metadata[order_no]",orderNo)
  req,_:=http.NewRequestWithContext(ctx,http.MethodPost,"https://api.stripe.com/v1/payment_intents",strings.NewReader(form.Encode()));req.SetBasicAuth(s.svcCtx.Config.Stripe.SecretKey,"");req.Header.Set("Content-Type","application/x-www-form-urlencoded")
  resp,err:=http.DefaultClient.Do(req);if err!=nil{return "","",err};defer resp.Body.Close();body,_:=io.ReadAll(resp.Body);if resp.StatusCode/100!=2{return "","",fmt.Errorf("stripe: %s",body)}
  var x map[string]any;if err=json.Unmarshal(body,&x);err!=nil{return "","",err};id,_:=x["id"].(string);secret,_:=x["client_secret"].(string);if id==""||secret==""{return "","",errors.New("stripe response missing payment intent fields")};return id,secret,nil
 }
 
-func (s *PaymentServer) paypalBase()string{if strings.EqualFold(s.svcCtx.Config.Paypal.Env,"live"){return "https://api-m.paypal.com"};return "https://api-m.sandbox.paypal.com"}
+func (s *PaymentServer) paypalBase()string{if strings.EqualFold(s.setting("paypal_env",s.svcCtx.Config.Paypal.Env),"live"){return "https://api-m.paypal.com"};return "https://api-m.sandbox.paypal.com"}
 func (s *PaymentServer) paypalToken(ctx context.Context)(string,error){
- if s.svcCtx.Config.Paypal.ClientID==""||s.svcCtx.Config.Paypal.ClientSecret==""{return "",errors.New("PayPal credentials are not configured")}
+ if s.setting("paypal_client_id",s.svcCtx.Config.Paypal.ClientID)==""||s.setting("paypal_client_secret",s.svcCtx.Config.Paypal.ClientSecret)==""{return "",errors.New("PayPal credentials are not configured")}
  req,_:=http.NewRequestWithContext(ctx,http.MethodPost,s.paypalBase()+"/v1/oauth2/token",strings.NewReader("grant_type=client_credentials"));req.SetBasicAuth(s.svcCtx.Config.Paypal.ClientID,s.svcCtx.Config.Paypal.ClientSecret);req.Header.Set("Content-Type","application/x-www-form-urlencoded")
  resp,err:=http.DefaultClient.Do(req);if err!=nil{return "",err};defer resp.Body.Close();body,_:=io.ReadAll(resp.Body);if resp.StatusCode/100!=2{return "",fmt.Errorf("paypal token: %s",body)}
  var x map[string]any;if err=json.Unmarshal(body,&x);err!=nil{return "",err};token,_:=x["access_token"].(string);return token,nil
@@ -114,14 +122,14 @@ func (s *PaymentServer) HandleWebhook(ctx context.Context,r *pb.WebhookRequest)(
  }
 }
 func(s *PaymentServer)verifyStripeSignature(payload,sig string)bool{
- secret:=s.svcCtx.Config.Stripe.WebhookSecret;if secret==""||sig==""{return false}
+ secret:=s.setting("stripe_webhook_secret",s.svcCtx.Config.Stripe.WebhookSecret);if secret==""||sig==""{return false}
  var ts string;var matched bool
  for _,part:=range strings.Split(sig,","){kv:=strings.SplitN(part,"=",2);if len(kv)!=2{continue};if kv[0]=="t"{ts=kv[1]};if kv[0]=="v1"{mac:=hmac.New(sha256.New,[]byte(secret));mac.Write([]byte(ts+"."+payload));if hmac.Equal(mac.Sum(nil),mustHex(kv[1])){matched=true}}}
  if ts==""{return false};t,err:=strconv.ParseInt(ts,10,64);if err!=nil{return false};return matched&&time.Since(time.Unix(t,0))<5*time.Minute&&time.Since(time.Unix(t,0))>-5*time.Minute
 }
 func mustHex(s string)[]byte{b,_:=hex.DecodeString(s);return b}
 func(s *PaymentServer)verifyPayPalWebhook(ctx context.Context,r *pb.WebhookRequest)error{
- if s.svcCtx.Config.Paypal.WebhookID==""{return errors.New("PAYPAL_WEBHOOK_ID is not configured")}
+ if s.setting("paypal_webhook_id",s.svcCtx.Config.Paypal.WebhookID)==""{return errors.New("PAYPAL_WEBHOOK_ID is not configured")}
  token,err:=s.paypalToken(ctx);if err!=nil{return err}
  body:=map[string]any{"auth_algo":r.GetAuthAlgo(),"cert_url":r.GetCertUrl(),"transmission_id":r.GetTransmissionId(),"transmission_sig":r.GetTransmissionSig(),"transmission_time":r.GetTransmissionTime(),"webhook_id":s.svcCtx.Config.Paypal.WebhookID,"webhook_event":json.RawMessage(r.GetPayload())}
  raw,_:=json.Marshal(body);req,_:=http.NewRequestWithContext(ctx,http.MethodPost,s.paypalBase()+"/v1/notifications/verify-webhook-signature",bytes.NewReader(raw));req.Header.Set("Authorization","Bearer "+token);req.Header.Set("Content-Type","application/json")
