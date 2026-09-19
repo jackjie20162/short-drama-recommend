@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+
 	"short-drama-recommend/rpc/user-rpc/internal/svc"
 	"short-drama-recommend/rpc/user-rpc/pb"
 )
@@ -18,7 +19,7 @@ func NewGetUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUserLo
 func (l *GetUserLogic) GetUser(in *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	return &pb.GetUserResponse{
 		User: &pb.User{
-			Id:        in.Id,
+			Id:        in.UserId,
 			Country:   "US",
 			Language:  "en",
 			Locale:    "en-US",
