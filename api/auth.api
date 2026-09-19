@@ -1,0 +1,48 @@
+syntax = "v1"
+
+type (
+  RegisterReq {
+    Email string `json:"email"`
+    Password string `json:"password"`
+    DisplayName string `json:"display_name,optional"`
+    Country string `json:"country,optional"`
+    Language string `json:"language,optional"`
+  }
+
+  LoginReq {
+    Email string `json:"email"`
+    Password string `json:"password"`
+  }
+
+  UserInfo {
+    Id int64 `json:"id"`
+    Email string `json:"email"`
+    DisplayName string `json:"display_name"`
+    Country string `json:"country"`
+    Language string `json:"language"`
+  }
+
+  AuthResp {
+    Token string `json:"token"`
+    User UserInfo `json:"user"`
+  }
+
+  MeResp {
+    Id int64 `json:"id"`
+    Email string `json:"email"`
+    DisplayName string `json:"display_name"`
+    Country string `json:"country"`
+    Language string `json:"language"`
+  }
+)
+
+service AuthAPI {
+  @handler Register
+  post /api/v1/auth/register (RegisterReq) returns (AuthResp)
+
+  @handler Login
+  post /api/v1/auth/login (LoginReq) returns (AuthResp)
+
+  @handler Me
+  get /api/v1/auth/me () returns (MeResp)
+}
