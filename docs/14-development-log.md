@@ -118,3 +118,57 @@ RecommendationFeature
 - 第一阶段不启用 Ent 自动迁移，继续以 deploy/mysql/init SQL 为数据库结构来源。
 - 当前环境没有执行 `make gen-ent` 或 `go test ./...`，因此不声称生成代码或测试已经通过。
 - 下一步：本地生成 Ent client 后，把 Drama/Episode/Entitlement Repository 切换到 Ent，再进入 Elasticsearch Content Indexer。
+
+
+## 2026-09-19 — V1.4 按 go-zero 官方规范校准 API-first 契约
+
+### 本次依据
+
+本阶段按 go-zero 官方推荐的 API/RPC 生成与分层方式推进：
+
+- REST：.api 作为 HTTP 契约来源，保持 Handler → Logic → ServiceContext 的边界。
+- RPC：.proto 作为 gRPC 契约来源，保持 Logic → RPC Server → ServiceContext。
+- API Gateway 通过生成的 zRPC client 注入 ServiceContext 调用 drama-rpc，不直接访问数据库。
+- 数据访问继续下沉到 Repository / Ent，业务 Logic 不拼接 SQL。
+- 数据库结构仍以 deploy/mysql/init/*.sql 为 source of truth，Ent 不承担自动迁移。
+
+官方参考：
+
+- go-zero 项目结构与 API/RPC 生成规范：https://go-zero.dev/zh-cn/concepts/project-structure/
+- go-zero RPC 服务指南：https://go-zero.dev/zh-cn/guides/quickstart/rpc-service/
+- go-zero Proto DSL：https://go-zero.dev/zh-cn/reference/proto-dsl/
+- go-zero RPC Client 配置：https://go-zero.dev/guides/grpc/client/configuration/
+
+### 本次落地
+
+- api/drama.api
+  - 补齐 Drama 业务语义字段：subtitle、genres、tags、price_cents、currency、popularity、completion_rate、pay_rate、published_at。
+  - 补齐行为事件上下文：source、request_id。
+  - 保持既有 endpoint 与字段兼容，仅增加 API 契约字段。
+
+### Ent 校准结论
+
+已对照 Ent 官方 Edge Schema 文档确认：
+
+- field.ID("drama_id", "genre_id") 作为 Edge Schema 的复合主键声明是合法模式，不再修改为普通 schema annotation。
+- DramaGenre / DramaTag 继续采用 Edge Schema + .Through(...)。
+- user_tag_profiles、behavior_events 的复合索引保持与 MySQL migration 一致。
+
+### 当前验证状态
+
+本次只完成 GitHub 静态契约校准，没有声称：
+
+- goctl api go 已在本环境执行成功；
+- goctl rpc protoc / protoc 已执行成功；
+- make gen-ent 已执行成功；
+- go test ./... 已通过；
+- Docker/MySQL/Redis/Elasticsearch 全链路已通过。
+
+下一步按官方生成链继续处理：
+
+1. 校准 .api 与现有生成代码的对应关系；
+2. 校准 .proto 与 generated pb/zRPC client；
+3. Ent Schema 与真实 MySQL migration 做逐表一致性检查；
+4. 生成 Ent client；
+5. 将 drama-rpc 的 Drama/Episode/Entitlement Repository 迁移到 Ent；
+6. 再进入 Content Indexer、Redis Recall 与 Recommendation Logic。
