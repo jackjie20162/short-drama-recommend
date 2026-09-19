@@ -1,4 +1,4 @@
-# Simple Admin compatible build/generation configuration.
+# Short Drama Recommendation - go-zero generation/build configuration.
 
 SERVICE=ShortDrama
 SERVICE_STYLE=short_drama
@@ -9,10 +9,9 @@ SERVICE_DASH=short-drama
 PROJECT_STYLE=go_zero
 PROJECT_I18N=true
 
-# Keep this aligned with the Simple Admin Ent workflow.
 ENT_FEATURE=sql/execquery,intercept,sql/modifier
 
-.PHONY: infra-up infra-down infra-logs gen gen-ent tidy fmt test
+.PHONY: infra-up infra-down infra-logs gen gen-api gen-rpc gen-ent tidy fmt test
 
 infra-up:
 	docker compose up -d
@@ -23,12 +22,20 @@ infra-down:
 infra-logs:
 	docker compose logs -f
 
-gen:
-	@echo "Install goctl/goctls and protoc locally, then run scripts/gen.sh"
+gen: gen-api gen-rpc gen-ent
+	@echo "go-zero API/RPC and Ent generation completed"
+
+gen-api:
+	goctl api go -api api/drama.api -dir drama-api
+	@echo "go-zero API generation completed"
+
+gen-rpc:
+	./scripts/gen.sh
+	@echo "go-zero RPC generation completed"
 
 gen-ent:
-	goctls run -mod=mod entgo.io/ent/cmd/ent generate --template glob="./rpc/ent/template/*.tmpl" ./rpc/ent/schema --feature $(ENT_FEATURE)
-	@echo "Generate Ent files successfully"
+	go run -mod=mod entgo.io/ent/cmd/ent generate --template glob="./rpc/ent/template/*.tmpl" ./rpc/ent/schema --feature $(ENT_FEATURE)
+	@echo "Ent ORM generation completed"
 
 tidy:
 	go mod tidy
