@@ -72,6 +72,15 @@ services:
       PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID:-}
     command: ["payment-rpc", "/app/etc/payment.yaml"]
 
+  auth-api:
+    build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: auth-api } }
+    container_name: short-drama-auth-api
+    depends_on: { mysql: { condition: service_healthy } }
+    ports: ["8082:8082"]
+    environment:
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-change-me-in-production}
+    command: ["auth-api", "/app/etc/auth-api.yaml"]
+
   drama-api:
     build: { context: ., dockerfile: deploy/docker/Dockerfile, args: { SERVICE: drama-api } }
     container_name: short-drama-drama-api
@@ -81,6 +90,8 @@ services:
       recommend-rpc: { condition: service_started }
       payment-rpc: { condition: service_started }
     ports: ["8080:8080"]
+    environment:
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-change-me-in-production}
     command: ["drama-api", "/app/etc/drama-api.yaml"]
 
   drama-admin-api:
