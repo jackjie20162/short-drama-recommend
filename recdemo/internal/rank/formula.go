@@ -8,6 +8,8 @@ type Config struct {
 	PayWeight float64
 	FreshnessWeight float64
 	SeenPenalty float64
+	RegionBoost float64
+	LangBoost float64
 }
 
 type Features struct {
@@ -20,20 +22,20 @@ type Features struct {
 	LangMatch bool
 }
 
-type Ranker struct { cfg Config }
+type Ranker struct{ cfg Config }
 
 func New(c Config) *Ranker { return &Ranker{cfg:c} }
 
 func (r *Ranker) Score(f Features, now int64) float64 {
 	age := float64(now-f.PublishedAt)
 	if age < 0 { age = 0 }
-	fresh := math.Exp(-age / (30*86400))
+	fresh := math.Exp(-age/(30*86400))
 	score := r.cfg.PopularityWeight*f.Popularity +
 		r.cfg.CompletionWeight*f.Completion +
 		r.cfg.PayWeight*f.PayRate +
 		r.cfg.FreshnessWeight*fresh
-	if f.RegionMatch { score += 0.08 }
-	if f.LangMatch { score += 0.12 }
+	if f.RegionMatch { score += r.cfg.RegionBoost }
+	if f.LangMatch { score += r.cfg.LangBoost }
 	if f.Seen { score -= r.cfg.SeenPenalty }
 	return score
 }
