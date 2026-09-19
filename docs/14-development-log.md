@@ -195,3 +195,28 @@ RecommendationFeature
 ### 验证状态
 
 本次提交已触发 GitHub Actions；最终以 workflow run 的实际结果为准，本日志不预先宣称通过。
+
+
+## 2026-09-19 — V1.6 对齐用户提供的 Go 依赖基线
+
+### 本次变更
+
+- 按用户上传的 `go.mod` 作为新的 Go module 依赖基线。
+- Go 版本切换为 `1.27.1`。
+- go-zero 版本基线调整为 `v1.10.3`。
+- MySQL、Redis、AWS S3、OSS、gRPC、x/crypto 等依赖同步到该基线。
+- 本次不在 `go.mod` 中自行追加 Ent 依赖；后续以实际代码生成/编译结果决定是否由 `go mod tidy` 补齐。
+
+### 生成链约定
+
+```text
+api/*.api              -> goctl api go       -> REST API
+proto/*.proto          -> goctl rpc protoc   -> RPC/pb
+rpc/ent/schema/*.go    -> ent generate      -> Ent ORM
+```
+
+`drama.api`、`proto/drama.proto` 和 Ent Schema 都属于源码契约，不互相自动生成。
+
+### 验证状态
+
+本次只完成 `go.mod` 基线调整，尚未声称 `go mod tidy`、goctl 生成、Ent 生成或 `go test ./...` 已通过。
