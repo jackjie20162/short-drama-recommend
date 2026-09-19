@@ -2,7 +2,7 @@ module short-drama-recommend
 
 go 1.23
 
-require (
+require (\n\tentgo.io/ent v0.14.5
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.2.2
 	github.com/aws/aws-sdk-go-v2 v1.30.3
