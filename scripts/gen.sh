@@ -12,20 +12,30 @@ command -v protoc-gen-go-grpc >/dev/null 2>&1 || { echo "protoc-gen-go-grpc is r
 PROTO_DIR="$ROOT/proto"
 cd "$PROTO_DIR"
 
+flatten_pb() {
+  local out="$1"
+  local pb_dir="../$out/pb"
+  local nested_dir="$pb_dir/short-drama-recommend"
+  local relative_out="${out#rpc/}"
+  local nested_package_dir="$nested_dir/$relative_out"
+  if [[ ! -d "$nested_package_dir" ]]; then return; fi
+  echo "Flattening generated PB: $nested_package_dir -> $pb_dir"
+  find "$nested_package_dir" -maxdepth 1 -type f -exec mv -f {} "$pb_dir/" \;
+  rm -rf "$nested_dir"
+}
+
 generate_rpc() {
   local proto="$1"
   local out="$2"
-
   echo "Generating RPC: $proto -> $out"
-
   mkdir -p "../$out/pb"
-
   goctl rpc protoc "$proto" \
     --go_out="../$out/pb" \
     --go_opt=module=short-drama-recommend \
     --go-grpc_out="../$out/pb" \
     --go-grpc_opt=module=short-drama-recommend \
     --zrpc_out="../$out"
+  flatten_pb "$out"
 }
 
 generate_rpc user.proto rpc/user-rpc
