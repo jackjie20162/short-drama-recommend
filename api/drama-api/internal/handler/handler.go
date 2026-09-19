@@ -11,6 +11,7 @@ import (
 	dramapb "short-drama-recommend/rpc/drama-rpc/pb"
 	behaviorpb "short-drama-recommend/rpc/behavior-rpc/pb"
 	recommendpb "short-drama-recommend/rpc/recommend-rpc/pb"
+	"short-drama-recommend/pkg/auth"
 	paymentpb "short-drama-recommend/rpc/payment-rpc/pb"
 )
 
@@ -62,8 +63,8 @@ func (h *Handler) GetDrama(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListEpisodes(w http.ResponseWriter,r *http.Request){
+ q:=r.URL.Query();uid,_:=strconv.ParseInt(q.Get("user_id"),10,64);if id,e:=auth.Bearer(r.Header.Get("Authorization"));e==nil{uid=id}
  id,err:=strconv.ParseInt(rest.PathValue(r.Context(),"id"),10,64);if err!=nil||id<=0{httpx.Error(w,err);return}
- q:=r.URL.Query();uid,_:=strconv.ParseInt(q.Get("user_id"),10,64)
  resp,err:=h.svcCtx.Drama.ListEpisodes(r.Context(),&dramapb.ListEpisodesRequest{DramaId:id,UserId:uid});if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
 
@@ -105,7 +106,8 @@ func (h *Handler) PaymentWebhook(w http.ResponseWriter,r *http.Request){
 }
 
 func (h *Handler) CreatePaymentOrder(w http.ResponseWriter,r *http.Request){
- var req paymentReq
+ uid,e:=auth.Bearer(r.Header.Get("Authorization"));if e!=nil{httpx.Error(w,e);return}
+ var req paymentReq;req.UserID=uid
  if err:=httpx.Parse(r,&req);err!=nil{httpx.Error(w,err);return}
  provider:=paymentpb.Provider_STRIPE
  if req.Provider=="paypal"||req.Provider=="PAYPAL"{provider=paymentpb.Provider_PAYPAL}
@@ -113,13 +115,15 @@ func (h *Handler) CreatePaymentOrder(w http.ResponseWriter,r *http.Request){
  if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
 func (h *Handler) CapturePayment(w http.ResponseWriter,r *http.Request){
+ if _,e:=auth.Bearer(r.Header.Get("Authorization"));e!=nil{httpx.Error(w,e);return}
  var req captureReq
  if err:=httpx.Parse(r,&req);err!=nil{httpx.Error(w,err);return}
  resp,err:=h.svcCtx.Payment.CapturePayment(r.Context(),&paymentpb.CapturePaymentRequest{OrderId:req.OrderID,ProviderOrderId:req.ProviderOrderID})
  if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
 func (h *Handler) ListPaymentOrders(w http.ResponseWriter,r *http.Request){
- q:=r.URL.Query();uid,_:=strconv.ParseInt(q.Get("user_id"),10,64);page,_:=strconv.Atoi(q.Get("page"));size,_:=strconv.Atoi(q.Get("page_size"))
+ uid,e:=auth.Bearer(r.Header.Get("Authorization"));if e!=nil{httpx.Error(w,e);return}
+ q:=r.URL.Query();_ = q;strconv.ParseInt(q.Get("user_id"),10,64);page,_:=strconv.Atoi(q.Get("page"));size,_:=strconv.Atoi(q.Get("page_size"))
  resp,err:=h.svcCtx.Payment.ListOrders(r.Context(),&paymentpb.ListOrdersRequest{UserId:uid,Page:int32(page),PageSize:int32(size)});if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
 
