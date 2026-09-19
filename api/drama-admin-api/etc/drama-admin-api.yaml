@@ -6,5 +6,7 @@ DramaRpc:
   Target: drama-rpc:9002
 PaymentRpc:
   Target: payment-rpc:9005
+MediaRpc:
+  Target: media-rpc:9006
 Mysql:
   DataSource: root:root@tcp(mysql:3306)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
