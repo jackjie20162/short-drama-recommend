@@ -12,7 +12,7 @@ PROJECT_I18N=true
 # Keep this aligned with the Simple Admin Ent workflow.
 ENT_FEATURE=sql/execquery,intercept,sql/modifier
 
-.PHONY: infra-up infra-down infra-logs gen gen-ent fmt test
+.PHONY: infra-up infra-down infra-logs gen gen-ent tidy fmt test
 
 infra-up:
 	docker compose up -d
@@ -29,6 +29,9 @@ gen:
 gen-ent:
 	goctls run -mod=mod entgo.io/ent/cmd/ent generate --template glob="./rpc/ent/template/*.tmpl" ./rpc/ent/schema --feature $(ENT_FEATURE)
 	@echo "Generate Ent files successfully"
+
+tidy:
+	go mod tidy
 
 fmt:
 	gofmt -w $$(find . -name '*.go' -type f -not -path './vendor/*')
