@@ -1,0 +1,15 @@
+Name: rec-api
+Host: 0.0.0.0
+Port: 8888
+Timeout: 3000
+
+ES:
+  Address: http://127.0.0.1:9200
+  Index: dramas
+
+Rank:
+  PopularityWeight: 0.35
+  CompletionWeight: 0.30
+  PayWeight: 0.25
+  FreshnessWeight: 0.10
+  SeenPenalty: 0.40
