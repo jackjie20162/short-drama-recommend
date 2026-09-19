@@ -1,12 +1,12 @@
 Name: payment-rpc
 ListenOn: 0.0.0.0:9005
 Mysql:
-  DataSource: root:root@tcp(127.0.0.1:3307)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
+  DataSource: root:root@tcp(mysql:3306)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
 Stripe:
   SecretKey: "__STRIPE_SECRET_KEY__"
   WebhookSecret: "__STRIPE_WEBHOOK_SECRET__"
 Paypal:
   ClientID: "__PAYPAL_CLIENT_ID__"
   ClientSecret: "__PAYPAL_CLIENT_SECRET__"
-  Env: "__PAYPAL_ENV__"
+  Env: "sandbox"
   WebhookID: "__PAYPAL_WEBHOOK_ID__"
