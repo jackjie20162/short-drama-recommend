@@ -220,3 +220,42 @@ rpc/ent/schema/*.go    -> ent generate      -> Ent ORM
 ### 验证状态
 
 本次只完成 `go.mod` 基线调整，尚未声称 `go mod tidy`、goctl 生成、Ent 生成或 `go test ./...` 已通过。
+
+
+## 2026-09-19 — V1.7 统一 go-zero 官方生成链
+
+### 本次落地
+
+- `Makefile` 新增 `gen-api`、`gen-rpc`，`gen` 统一串联 API、RPC、Ent 三类生成。
+- `api/drama.api` 作为 REST 契约源，由 `goctl api go` 生成 `drama-api/`。
+- `proto/*.proto` 作为 RPC 契约源，由 `goctl rpc protoc` 生成 protobuf、gRPC 与 zRPC 服务代码。
+- `rpc/ent/schema/*.go` 继续由官方 Ent generator 生成 ORM 代码。
+- `scripts/gen.sh` 从直接调用 `protoc` 调整为调用官方 `goctl rpc protoc`。
+- CI 安装 `goctl@v1.10.3`，并将 API/RPC/Ent 生成纳入验证链。
+- CI Go 版本与新的 `go.mod` 基线统一到 `1.27.1`。
+
+### 官方依据
+
+go-zero 官方文档明确支持：
+
+- `goctl api go -api <file>.api -dir <dir>` 生成 REST 项目；
+- `goctl rpc protoc <file>.proto --go_out=... --go-grpc_out=... --zrpc_out=...` 生成 RPC 服务；
+- 修改 `.api` / `.proto` 后可重新生成，并保留 `internal/logic/` 业务逻辑。
+
+参考：
+- https://go-zero.dev/zh-cn/getting-started/project-creation/
+- https://go-zero.dev/zh-cn/reference/cli-guide/rpc/
+
+### CI 已发现的问题
+
+上一轮 workflow `35434122114` 已结束，backend 在原 `scripts/gen.sh` 的 protobuf generation 阶段失败；Ent、test、build 均因此未执行。新的提交已经把生成入口切换为 goctl，后续以新 workflow 实际结果为准。
+
+### 生成边界
+
+```text
+api/drama.api             -> goctl api go       -> drama-api
+proto/*.proto             -> goctl rpc protoc   -> rpc/*-rpc
+rpc/ent/schema/*.go       -> ent generate       -> rpc/ent
+```
+
+三类契约互不自动反向生成：API 契约、RPC 契约、数据库 ORM Schema 分别维护。
