@@ -118,7 +118,7 @@ func (h *Handler) CapturePayment(w http.ResponseWriter,r *http.Request){
  if _,e:=auth.Bearer(r.Header.Get("Authorization"));e!=nil{httpx.Error(w,e);return}
  var req captureReq
  if err:=httpx.Parse(r,&req);err!=nil{httpx.Error(w,err);return}
- resp,err:=h.svcCtx.Payment.CapturePayment(r.Context(),&paymentpb.CapturePaymentRequest{OrderId:req.OrderID,ProviderOrderId:req.ProviderOrderID})
+ resp,err:=h.svcCtx.Payment.CapturePayment(r.Context(),&paymentpb.CapturePaymentRequest{OrderId:req.OrderID,ProviderOrderId:req.ProviderOrderID,UserId:func()int64{id,_:=auth.Bearer(r.Header.Get("Authorization"));return id}()})
  if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
 func (h *Handler) ListPaymentOrders(w http.ResponseWriter,r *http.Request){
@@ -129,5 +129,5 @@ func (h *Handler) ListPaymentOrders(w http.ResponseWriter,r *http.Request){
 
 func (h *Handler) GetPaymentOrder(w http.ResponseWriter,r *http.Request){
  id,err:=strconv.ParseInt(rest.PathValue(r.Context(),"id"),10,64);if err!=nil||id<=0{httpx.Error(w,err);return}
- resp,err:=h.svcCtx.Payment.GetOrder(r.Context(),&paymentpb.GetOrderRequest{OrderId:id});if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
+ uid,e:=auth.Bearer(r.Header.Get("Authorization"));if e!=nil{httpx.Error(w,e);return};resp,err:=h.svcCtx.Payment.GetOrder(r.Context(),&paymentpb.GetOrderRequest{OrderId:id,UserId:uid});if err!=nil{httpx.Error(w,err);return};httpx.OkJson(w,resp)
 }
