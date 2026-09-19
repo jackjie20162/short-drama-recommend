@@ -12,7 +12,8 @@
 - MySQL 用户、短剧、剧集、标签、行为表
 - drama-api / drama-rpc / behavior-rpc / recommend-rpc
 - 推荐 V1 规则排序
-- docs/01-architecture.md、docs/11-recommendation.md 等项目文档
+- Docker/本地测试脚本
+- 已有架构、推荐、支付、媒体等项目文档
 
 ### 本次决策
 
@@ -34,31 +35,74 @@ Business Entity
 
 ### 本次落地
 
-- 增加 `docs/12-content-data-contract.md`
-- 增加 `docs/13-elasticsearch-index.md`
-- 增加本开发日志
-- 增加增量数据库 migration：`010_recommend_content.sql`
-- 扩展 Drama / Episode protobuf 的内容字段
-- 为下一阶段 Feature Builder 预留统一输入结构
+- `docs/12-content-data-contract.md`
+- `docs/13-elasticsearch-index.md`
+- `docs/14-development-log.md`
+- `deploy/mysql/init/010_recommend_content.sql`
+- 扩展 `proto/drama.proto`
+- 扩展 `proto/behavior.proto`
+- 扩展 `internal/model/drama.go`
+- 扩展 `internal/model/episode.go`
+- 扩展 `internal/model/behavior.go`
+- 新增 `internal/model/content_feature.go`
+- 新增 `internal/model/feature_builder.go`
+- 更新 `docs/01-architecture.md`
+- 更新 `docs/11-recommendation.md`
+
+### 关键数据结构
+
+业务层：
+
+```text
+Drama
+  title
+  subtitle
+  description
+  genres[]
+  tags[]
+  country
+  language
+  popularity
+  completion_rate
+  pay_rate
+```
+
+模型层：
+
+```text
+RecommendationFeature
+  sparse
+  dense
+  semantic
+```
+
+### Git 提交记录
+
+本次操作已逐步提交到 `main`，主要提交：
+
+- `813c05e` — recommendation content schema
+- `5f18775` — drama content contract
+- `76b3eac` — behavior event context
+- `b0ffbe6` / `91af4b4` — recommendation feature contracts
+- `571a63d` — drama business model
+- `0404f65` — episode content model
+- `bd84f97` — behavior event model
+- `a0e723f` / `3b55c05` — architecture/recommendation docs
 
 ### 验证状态
 
-本次通过 GitHub 仓库静态检查完成架构与契约落地。
+已完成 GitHub 代码结构与契约检查。
 
-未宣称已经完成：
+当前环境没有直接执行用户本地 Go/Protobuf/Docker 的能力，因此本日志不把 `go test ./...`、`protoc`、Docker 全链路测试标记为已通过。
 
-- Elasticsearch 实际部署
-- embedding 模型训练
-- MMoE 训练
-- Triton/ONNX 在线推理
-- Kafka 行为流
-- A/B 实验
+本次修改保持 Proto 字段向后兼容：仅新增字段，不复用既有字段编号。
 
 ### 下一步
 
-1. Feature Builder 实现
-2. Drama 内容同步 ES
-3. Redis country × language 热度榜
-4. MMoE 离线样本生成
-5. 模型训练与离线评估
-6. 在线 rank-rpc 接入
+1. 让 `drama-rpc` Repository 真正读取 genres/tags/metrics/subtitle/发布时间。
+2. 实现 Content Indexer：MySQL -> Elasticsearch。
+3. 实现 Feature Builder 的 user + drama 双侧输入。
+4. 建立 Redis country × language 热度榜。
+5. 生成 MMoE 离线训练样本。
+6. 接入训练/评估流程，再进入 rank-rpc。
+7. 每一步继续追加本文件，记录代码、数据库、验证结果和 Git commit。
