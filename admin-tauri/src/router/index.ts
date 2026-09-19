@@ -5,6 +5,7 @@ import DramaCreate from '../views/drama/DramaCreate.vue'
 import EpisodeList from '../views/episode/EpisodeList.vue'
 import OrderList from '../views/order/OrderList.vue'
 import UserList from '../views/user/UserList.vue'
+import Settings from '../views/settings/Settings.vue'
 export default createRouter({history:createWebHashHistory(),routes:[
 {path:'/',redirect:'/dashboard'},{path:'/dashboard',component:Dashboard},{path:'/dramas',component:DramaList},
-{path:'/dramas/create',component:DramaCreate},{path:'/episodes',component:EpisodeList},{path:'/orders',component:OrderList},{path:'/users',component:UserList}]})
+{path:'/dramas/create',component:DramaCreate},{path:'/episodes',component:EpisodeList},{path:'/orders',component:OrderList},{path:'/users',component:UserList},{path:'/settings',component:Settings}]})
