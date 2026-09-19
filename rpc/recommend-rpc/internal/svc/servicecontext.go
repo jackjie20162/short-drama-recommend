@@ -22,6 +22,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:c, DB:database,
 		DramaRepo:repository.NewMySQLDramaRepository(database),
-		Redis:cache.NewRedis(c.Redis.Host, c.Redis.Pass),
+		Redis:cache.NewRedis(c.CacheRedis.Host, c.CacheRedis.Pass),
 	}
 }
