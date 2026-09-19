@@ -43,7 +43,7 @@ func readSettings(r *http.Request,db *sql.DB,group string)(map[string]any,error)
 func saveSettings(r *http.Request,db *sql.DB,group string,values map[string]any)(map[string]any,error){
  allowed:=map[string]bool{"payment":true,"storage":true};if !allowed[group]{return nil,errors.New("unsupported setting group")}
  secrets:=map[string]bool{"stripe_secret_key":true,"stripe_webhook_secret":true,"paypal_client_secret":true,"oss_secret_key":true,"s3_secret_key":true}
- for k,v:=range values{sv:=toString(v);if secrets[k]&&sv!=""{enc,e:=settings.Encrypt(sv);if e!=nil{return nil,e};sv=enc};if secrets[k]&&sv==""{continue};_,e:=db.ExecContext(r.Context(),"INSERT INTO system_settings(setting_group,setting_key,setting_value,is_secret) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),is_secret=VALUES(is_secret)",group,k,sv,boolInt(secrets[k]));if e!=nil{return nil,e}}
+ for k,v:=range values{sv:=toString(v);if secrets[k]&&(sv==""||sv=="********"){continue};if secrets[k]&&sv!=""{enc,e:=settings.Encrypt(sv);if e!=nil{return nil,e};sv=enc};if secrets[k]&&sv==""{continue};_,e:=db.ExecContext(r.Context(),"INSERT INTO system_settings(setting_group,setting_key,setting_value,is_secret) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),is_secret=VALUES(is_secret)",group,k,sv,boolInt(secrets[k]));if e!=nil{return nil,e}}
  return readSettings(r,db,group)
 }
 func testSettings(r *http.Request,db *sql.DB,group,provider string)(map[string]any,error){
