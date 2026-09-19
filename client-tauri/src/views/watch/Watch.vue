@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { request } from '../../api/client'
+import { request,userId } from '../../api/client'
 import { ElMessage } from 'element-plus'
 const route=useRoute(), router=useRouter(), episode=ref<any>(null), episodes=ref<any[]>([]), video=ref<HTMLVideoElement|null>(null)
 let hls:any=null
 async function setupVideo(){await nextTick();if(!episode.value?.video_url||!video.value)return;const url=episode.value.video_url;if(video.value.canPlayType('application/vnd.apple.mpegurl')){video.value.src=url;return}try{const mod=await import('hls.js');const Hls=mod.default;if(Hls.isSupported()){hls=new Hls();hls.loadSource(url);hls.attachMedia(video.value);return}}catch{}video.value.src=url}
-onMounted(async()=>{try{episodes.value=(await request('/api/v1/dramas/'+route.params.dramaId+'/episodes?user_id=1')).items||[];episode.value=episodes.value.find(x=>String(x.id)===String(route.params.episodeId));if(!episode.value){ElMessage.error('剧集不存在或未解锁');return}if(!episode.value.unlocked&&episode.value.is_paid){ElMessage.info('请先购买本剧');router.replace('/checkout/'+route.params.dramaId);return}await setupVideo()}catch{ElMessage.error('剧集加载失败')}})
+onMounted(async()=>{try{episodes.value=(await request('/api/v1/dramas/'+route.params.dramaId+'/episodes?user_id='+userId()')).items||[];episode.value=episodes.value.find(x=>String(x.id)===String(route.params.episodeId));if(!episode.value){ElMessage.error('剧集不存在或未解锁');return}if(!episode.value.unlocked&&episode.value.is_paid){ElMessage.info('请先购买本剧');router.replace('/checkout/'+route.params.dramaId);return}await setupVideo()}catch{ElMessage.error('剧集加载失败')}})
 onBeforeUnmount(()=>{try{hls?.destroy()}catch{}})
 </script>
 <template>
