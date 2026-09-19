@@ -3,12 +3,21 @@ syntax = "v1"
 type Drama {
   Id int64 `json:"id"`
   Title string `json:"title"`
+  Subtitle string `json:"subtitle"`
   Description string `json:"description"`
   Cover string `json:"cover"`
   Country string `json:"country"`
   Language string `json:"language"`
+  Genres []string `json:"genres"`
+  Tags []string `json:"tags"`
   TotalEpisodes int `json:"total_episodes"`
   IsPaid bool `json:"is_paid"`
+  PriceCents int64 `json:"price_cents"`
+  Currency string `json:"currency"`
+  Popularity float64 `json:"popularity"`
+  CompletionRate float64 `json:"completion_rate"`
+  PayRate float64 `json:"pay_rate"`
+  PublishedAt string `json:"published_at"`
 }
 
 type GetDramaResp {
@@ -42,6 +51,8 @@ type RecordBehaviorReq {
   Country string `json:"country"`
   Language string `json:"language"`
   Device string `json:"device"`
+  Source string `json:"source"`
+  RequestId string `json:"request_id"`
 }
 
 type RecordBehaviorResp {
