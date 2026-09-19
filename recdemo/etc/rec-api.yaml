@@ -13,3 +13,5 @@ Rank:
   PayWeight: 0.25
   FreshnessWeight: 0.10
   SeenPenalty: 0.40
+  RegionBoost: 0.08
+  LangBoost: 0.12
