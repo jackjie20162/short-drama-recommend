@@ -36,7 +36,8 @@ func(s *MediaServer)CompleteUpload(ctx context.Context,r *pb.CompleteUploadReque
  playback:=st.PublicURL(r.GetObjectKey())
  if playback==""{playback,_=st.PresignGet(ctx,r.GetObjectKey(),5*time.Minute)}
  _,e=s.svcCtx.DB.ExecContext(ctx,"UPDATE episodes SET video_provider=?,video_storage=?,video_object_key=?,video_playback_url=?,video_format='source',video_status='UPLOADED',video_size_bytes=?,video_checksum=?,video_updated_at=NOW() WHERE id=?",providerName(st),strings.ToLower(providerName(st)),r.GetObjectKey(),playback,size,r.GetChecksum(),r.GetEpisodeId());if e!=nil{return nil,e}
- return &pb.MediaAsset{Provider:providerName(st),ObjectKey:r.GetObjectKey(),PlaybackUrl:playback,Status:"UPLOADED"},nil
+ go s.processEpisode(r.GetEpisodeId(),providerName(st),r.GetObjectKey())
+ return &pb.MediaAsset{Provider:providerName(st),ObjectKey:r.GetObjectKey(),PlaybackUrl:playback,Status:"PROCESSING"},nil
 }
 
 func(s *MediaServer)GetPlayback(ctx context.Context,r *pb.GetPlaybackRequest)(*pb.PlaybackResponse,error){
