@@ -14,5 +14,7 @@ type Config struct {
 		PayWeight float64
 		FreshnessWeight float64
 		SeenPenalty float64
+		RegionBoost float64
+		LangBoost float64
 	}
 }
