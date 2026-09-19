@@ -12,15 +12,39 @@
 
 当前第一阶段已经实现：
 
-1. **地区匹配**：请求 country 与剧 country 匹配时增加排序分。
-2. **语言匹配**：请求 language 与剧 language 匹配时增加排序分。
-3. **全局热度**：根据 behavior_events 的互动次数计算热度分。
-4. **观看深度**：根据累计 watch_seconds 增加观看质量分。
-5. **已看降权**：登录用户已经产生过行为的剧降低排序，避免首页重复轰炸。
-6. **付费历史信号**：用户已经拥有该剧 entitlement 时给出轻量加权。
-7. **匿名冷启动**：没有 user_id 时仍能返回地区/语言 + 全局热度 feed。
-8. **cursor 分页**：当前使用 offset cursor，保持 API 兼容；后续候选规模扩大后可切换 keyset cursor。
-9. **推荐理由**：返回 region_match、language_match、popular、not_watched、high_watch_time 等 reason。
+1. 地区匹配加分。
+2. 语言匹配加分。
+3. 全局热度。
+4. 观看深度。
+5. 已看降权。
+6. 付费历史信号。
+7. 匿名冷启动。
+8. cursor 分页。
+9. 推荐理由。
+
+## 内容数据升级
+
+从 V1.1 开始，推荐系统采用统一内容契约：
+
+```text
+Drama
+├── title
+├── subtitle
+├── description
+├── genres[]
+├── tags[]
+├── country
+├── language
+├── popularity
+├── completion_rate
+└── pay_rate
+       |
+       +--> Elasticsearch content document
+       |
+       +--> RecommendationFeature
+```
+
+因此名称、简介、题材和标签属于业务数据；模型侧通过 Feature Builder 转换为 sparse/dense/semantic 特征。
 
 ## 当前打分
 
@@ -36,12 +60,23 @@
 
 ### recall-rpc
 
-按 `country × language` 建立 Redis ZSet 热度榜，并增加：
+按 country × language 建立 Redis ZSet 热度榜，并增加：
 
 - 新剧召回
 - 追更召回
 - 相似题材召回
 - 全局热门兜底
+- ES 内容/语义召回
+
+### feature-rpc / Feature Builder
+
+统一生成：
+
+- sparse features
+- dense features
+- semantic embeddings
+
+语义输入由 title、subtitle、description、genres、tags、language、country 构成。
 
 ### rank-rpc
 
@@ -56,52 +91,17 @@
 
 `score = w1*pCTR + w2*expected_watch_time + w3*pComplete + w4*pPay`
 
-权重按场景、区域、语言进行配置，而不是写死在客户端。
+权重按场景、区域、语言配置。
 
 ### rerank-rpc
 
-负责：
-
-- 同剧去重
-- 题材多样性
-- 运营位
-- 付费引导
-- 区域节日/时区适配
-- 追更位例外
-
-### feature-rpc / 模型推理
-
-最终在线链路：
-
-`recall -> rank -> rerank`
-
-模型推理服务预留 Triton/ONNX 接口。第一阶段不直接引入 MMoE，避免在行为样本不足时过早模型化。
-
-## 数据闭环
-
-行为事件至少保留：
-
-- exposure
-- click
-- watch_start
-- watch_progress
-- episode_complete
-- unlock/pay
-
-其中 watch_seconds 与 duration_seconds 用于计算观看深度/完播特征，付费事件作为稀疏目标单独采样和校准。
-
-## 全球化原则
-
-- 不同地区的热度榜不能直接混用。
-- country/language 是特征，不应在没有内容供给时把用户过滤到空结果。
-- 区域审核、版权和上下架状态必须在 item/内容域完成后再进入推荐候选。
-- 一个全局模型 + region/language bias 优先于每地区独立模型。
-- 新地区/新剧使用题材、语言、地区和全局热度进行冷启动。
+负责同剧去重、题材多样性、运营位、付费引导、区域节日/时区适配及追更位例外。
 
 ## 当前限制
 
-当前推荐服务是 MySQL 在线规则推荐，尚未接入：
+尚未宣称完成：
 
+- Elasticsearch 实际部署
 - Redis ZSet 热度榜
 - Kafka 行为流
 - MMoE/ONNX/Triton
@@ -109,4 +109,4 @@
 - 区域化模型 bias
 - 运营位配置中心
 
-这些属于第二阶段，不伪装成已经完成的功能。
+这些属于后续阶段。
