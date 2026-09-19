@@ -70,6 +70,7 @@ services:
       PAYPAL_ENV: ${PAYPAL_ENV:-sandbox}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID:-}
+      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:-}
     command: ["payment-rpc", "/app/etc/payment.yaml"]
 
   auth-api:
@@ -100,6 +101,8 @@ services:
     depends_on:
       drama-rpc: { condition: service_started }
     ports: ["8081:8081"]
+    environment:
+      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:-}
     command: ["drama-admin-api", "/app/etc/drama-admin-api.yaml"]
 
 volumes:
