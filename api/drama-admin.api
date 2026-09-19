@@ -1,0 +1,159 @@
+syntax = "v1"
+
+type (
+  DramaAdmin {
+    Id int64 `json:"id"`
+    Title string `json:"title"`
+    Subtitle string `json:"subtitle"`
+    Description string `json:"description"`
+    Cover string `json:"cover"`
+    Country string `json:"country"`
+    Language string `json:"language"`
+    Genres []string `json:"genres"`
+    Tags []string `json:"tags"`
+    TotalEpisodes int `json:"total_episodes"`
+    IsPaid bool `json:"is_paid"`
+    PriceCents int64 `json:"price_cents"`
+    Currency string `json:"currency"`
+    Status int `json:"status"`
+  }
+
+  CreateDramaReq {
+    Title string `json:"title"`
+    Subtitle string `json:"subtitle,optional"`
+    Description string `json:"description,optional"`
+    Cover string `json:"cover,optional"`
+    Country string `json:"country,optional"`
+    Language string `json:"language,optional"`
+    Genres []string `json:"genres,optional"`
+    Tags []string `json:"tags,optional"`
+    TotalEpisodes int `json:"total_episodes,optional"`
+    IsPaid bool `json:"is_paid,optional"`
+    PriceCents int64 `json:"price_cents,optional"`
+    Currency string `json:"currency,optional"`
+  }
+
+  UpdateDramaReq {
+    Title string `json:"title,optional"`
+    Subtitle string `json:"subtitle,optional"`
+    Description string `json:"description,optional"`
+    Cover string `json:"cover,optional"`
+    Country string `json:"country,optional"`
+    Language string `json:"language,optional"`
+    Genres []string `json:"genres,optional"`
+    Tags []string `json:"tags,optional"`
+    TotalEpisodes int `json:"total_episodes,optional"`
+    IsPaid bool `json:"is_paid,optional"`
+    PriceCents int64 `json:"price_cents,optional"`
+    Currency string `json:"currency,optional"`
+  }
+
+  SetDramaStatusReq {
+    Status int `json:"status"`
+  }
+
+  AdminListDramaReq {
+    Keyword string `form:"keyword,optional"`
+    Country string `form:"country,optional"`
+    Language string `form:"language,optional"`
+    Status int `form:"status,optional"`
+    Page int `form:"page,optional"`
+    PageSize int `form:"page_size,optional"`
+  }
+
+  AdminListDramaResp {
+    Items []DramaAdmin `json:"items"`
+    Total int64 `json:"total"`
+  }
+
+  Episode {
+    Id int64 `json:"id"`
+    DramaId int64 `json:"drama_id"`
+    EpisodeNo int `json:"episode_no"`
+    Title string `json:"title"`
+    Description string `json:"description"`
+    DurationSeconds int `json:"duration_seconds"`
+    Status int `json:"status"`
+    VideoUrl string `json:"video_url"`
+  }
+
+  CreateEpisodeReq {
+    EpisodeNo int `json:"episode_no"`
+    Title string `json:"title"`
+    Description string `json:"description,optional"`
+    DurationSeconds int `json:"duration_seconds,optional"`
+    VideoUrl string `json:"video_url,optional"`
+  }
+
+  SetEpisodeStatusReq {
+    Status int `json:"status"`
+  }
+
+  ListEpisodeReq {
+    Status int `form:"status,optional"`
+  }
+
+  ListEpisodeResp {
+    Items []Episode `json:"items"`
+  }
+
+  ListOrdersReq {
+    Page int `form:"page,optional"`
+    PageSize int `form:"page_size,optional"`
+  }
+
+  UploadReq {
+    Filename string `json:"filename"`
+    ContentType string `json:"content_type"`
+    Size int64 `json:"size"`
+  }
+
+  CompleteUploadReq {
+    ObjectKey string `json:"object_key"`
+    Etag string `json:"etag,optional"`
+  }
+
+  SettingTestReq {
+    Provider string `json:"provider"`
+  }
+
+  SettingTestResp {
+    Ok bool `json:"ok"`
+    Message string `json:"message"`
+  }
+)
+
+service DramaAdminAPI {
+  @handler CreateDrama
+  post /api/v1/admin/dramas (CreateDramaReq) returns (DramaAdmin)
+
+  @handler AdminListDrama
+  get /api/v1/admin/dramas (AdminListDramaReq) returns (AdminListDramaResp)
+
+  @handler UpdateDrama
+  put /api/v1/admin/dramas/:id (UpdateDramaReq) returns (DramaAdmin)
+
+  @handler SetDramaStatus
+  post /api/v1/admin/dramas/:id/status (SetDramaStatusReq) returns (DramaAdmin)
+
+  @handler CreateEpisode
+  post /api/v1/admin/dramas/:id/episodes (CreateEpisodeReq) returns (Episode)
+
+  @handler ListEpisode
+  get /api/v1/admin/dramas/:id/episodes (ListEpisodeReq) returns (ListEpisodeResp)
+
+  @handler SetEpisodeStatus
+  post /api/v1/admin/episodes/:id/status (SetEpisodeStatusReq) returns (Episode)
+
+  @handler CreateUpload
+  post /api/v1/admin/episodes/:id/upload (UploadReq) returns (UploadReq)
+
+  @handler CompleteUpload
+  post /api/v1/admin/episodes/:id/upload/complete (CompleteUploadReq) returns (CompleteUploadReq)
+
+  @handler ListOrders
+  get /api/v1/admin/orders (ListOrdersReq) returns (ListOrdersReq)
+
+  @handler TestSettings
+  post /api/v1/admin/settings/:group/test (SettingTestReq) returns (SettingTestResp)
+}
