@@ -26,7 +26,9 @@ gen: gen-api gen-rpc gen-ent
 	@echo "go-zero API/RPC and Ent generation completed"
 
 gen-api:
-	goctl api go -api api/drama.api -dir drama-api
+	goctl api go -api api/auth.api -dir api/auth-api
+	goctl api go -api api/drama.api -dir api/drama-api
+	goctl api go -api api/drama-admin.api -dir api/drama-admin-api
 	@echo "go-zero API generation completed"
 
 gen-rpc:
