@@ -33,8 +33,8 @@ function Generate-Rpc([string]$Proto, [string]$Out) {
     Push-Location $ProtoDir
     try {
         & $goctl rpc protoc $Proto `
-            "--go_out=../$Out/pb" `
-            "--go-grpc_out=../$Out/pb" `
+            "--go_out=paths=source_relative:../$Out/pb" `
+            "--go-grpc_out=paths=source_relative:../$Out/pb" `
             "--zrpc_out=../$Out"
         if ($LASTEXITCODE -ne 0) {
             throw "RPC generation failed: $Proto"
