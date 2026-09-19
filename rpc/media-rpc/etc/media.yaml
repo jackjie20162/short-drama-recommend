@@ -1,4 +1,13 @@
 Name: media-rpc
 ListenOn: 0.0.0.0:9006
+Timeout: 3000
 Mysql:
-  DataSource: root:root@tcp(mysql:3306)/short_drama?charset=utf8mb4&parseTime=true&loc=Local
+  DataSource: root:root@tcp(127.0.0.1:3307)/short_drama?charset=utf8mb4&parseTime=true&loc=UTC
+Storage:
+  Provider: local
+  Bucket:
+  Endpoint:
+  Region:
+  AccessKey:
+  SecretKey:
+  PublicBaseURL:
