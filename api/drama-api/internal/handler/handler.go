@@ -107,8 +107,8 @@ func (h *Handler) PaymentWebhook(w http.ResponseWriter,r *http.Request){
 
 func (h *Handler) CreatePaymentOrder(w http.ResponseWriter,r *http.Request){
  uid,e:=auth.Bearer(r.Header.Get("Authorization"));if e!=nil{httpx.Error(w,e);return}
- var req paymentReq;req.UserID=uid
- if err:=httpx.Parse(r,&req);err!=nil{httpx.Error(w,err);return}
+ var req paymentReq
+ if err:=httpx.Parse(r,&req);err!=nil{httpx.Error(w,err);return};req.UserID=uid
  provider:=paymentpb.Provider_STRIPE
  if req.Provider=="paypal"||req.Provider=="PAYPAL"{provider=paymentpb.Provider_PAYPAL}
  resp,err:=h.svcCtx.Payment.CreateOrder(r.Context(),&paymentpb.CreateOrderRequest{UserId:req.UserID,DramaId:req.DramaID,Provider:provider,Currency:req.Currency,ReturnUrl:req.ReturnURL,CancelUrl:req.CancelURL})
