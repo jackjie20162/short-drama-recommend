@@ -172,3 +172,26 @@ RecommendationFeature
 4. 生成 Ent client；
 5. 将 drama-rpc 的 Drama/Episode/Entitlement Repository 迁移到 Ent；
 6. 再进入 Content Indexer、Redis Recall 与 Recommendation Logic。
+
+
+## 2026-09-19 — V1.5 Ent 生成进入 CI 校验链
+
+### 本次落地
+
+- .github/workflows/build-test.yml 增加 Ent code generation。
+- 使用官方 Ent generator。
+- 使用项目现有 templates。
+- 保持 sql/execquery,intercept,sql/modifier feature 配置。
+- CI 顺序调整为：
+  1. protobuf generation
+  2. Ent generation
+  3. go test
+  4. service build
+
+### 目的
+
+先让 CI 替代本地环境完成 Schema 是否能被 Ent 正确生成的客观验证，再决定 Repository 迁移，避免在未生成验证前大规模切换数据库访问层。
+
+### 验证状态
+
+本次提交已触发 GitHub Actions；最终以 workflow run 的实际结果为准，本日志不预先宣称通过。
