@@ -34,11 +34,12 @@ gen-api:
 ifeq ($(OS),Windows_NT)
 gen-rpc:
 	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gen-rpc.ps1
+	@echo "go-zero RPC generation completed"
 else
 gen-rpc:
 	bash scripts/gen.sh
-endif
 	@echo "go-zero RPC generation completed"
+endif
 
 gen-ent:
 	go run -mod=mod entgo.io/ent/cmd/ent generate --template glob="./rpc/ent/template/*.tmpl" ./rpc/ent/schema --feature $(ENT_FEATURE)
