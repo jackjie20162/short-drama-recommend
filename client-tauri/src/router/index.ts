@@ -23,4 +23,4 @@ export default createRouter({
     { path: '/orders/:id', component: () => import('../views/orders/OrderDetail.vue') },
     { path: '/profile', component: Profile },
   ],
-}).beforeEach((to)=>{ if (['/checkout','/orders','/profile'].some(p=>to.path.startsWith(p)) && !token()) return '/login' })
+}).beforeEach((to)=>{ if (['/checkout','/orders','/profile'].some(p=>to.path.startsWith(p)) && !token()) return { path:'/login', query:{redirect:to.fullPath} } })
