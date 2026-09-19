@@ -1,13 +1,10 @@
 $ErrorActionPreference = "Stop"
-
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $Root
 
 function Require-Command([string]$Name) {
     $command = Get-Command $Name -ErrorAction SilentlyContinue
-    if (-not $command) {
-        throw "$Name is required. Please install it and make sure it is available in PATH."
-    }
+    if (-not $command) { throw "$Name is required. Please install it and make sure it is available in PATH." }
     return $command.Source
 }
 
@@ -23,13 +20,22 @@ Write-Host "protoc-gen-go-grpc: $protocGenGoGrpc"
 
 $ProtoDir = Join-Path $Root "proto"
 
+function Flatten-Pb([string]$Out) {
+    $outDir = Join-Path $Root $Out
+    $pbDir = Join-Path $outDir "pb"
+    $relativeOut = $Out -replace "^rpc[\\/]", ""
+    $nestedPackageDir = Join-Path (Join-Path $pbDir "short-drama-recommend") $relativeOut
+    if (-not (Test-Path $nestedPackageDir)) { return }
+    Write-Host "Flattening generated PB: $nestedPackageDir -> $pbDir"
+    Get-ChildItem -Path $nestedPackageDir -File | ForEach-Object { Move-Item -Force $_.FullName (Join-Path $pbDir $_.Name) }
+    Remove-Item -Recurse -Force (Join-Path $pbDir "short-drama-recommend")
+}
+
 function Generate-Rpc([string]$Proto, [string]$Out) {
     Write-Host ""
     Write-Host "Generating RPC: $Proto -> $Out"
-
     $outDir = Join-Path $Root $Out
     New-Item -ItemType Directory -Force -Path (Join-Path $outDir "pb") | Out-Null
-
     Push-Location $ProtoDir
     try {
         & $goctl rpc protoc $Proto `
@@ -38,13 +44,9 @@ function Generate-Rpc([string]$Proto, [string]$Out) {
             "--go-grpc_out=../$Out/pb" `
             "--go-grpc_opt=module=short-drama-recommend" `
             "--zrpc_out=../$Out"
-        if ($LASTEXITCODE -ne 0) {
-            throw "RPC generation failed: $Proto"
-        }
-    }
-    finally {
-        Pop-Location
-    }
+        if ($LASTEXITCODE -ne 0) { throw "RPC generation failed: $Proto" }
+    } finally { Pop-Location }
+    Flatten-Pb $Out
 }
 
 Generate-Rpc "user.proto" "rpc/user-rpc"
