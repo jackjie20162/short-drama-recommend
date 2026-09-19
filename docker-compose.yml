@@ -100,6 +100,7 @@ services:
     container_name: short-drama-drama-admin-api
     depends_on:
       drama-rpc: { condition: service_started }
+      mysql: { condition: service_healthy }
     ports: ["8081:8081"]
     environment:
       SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:-}
