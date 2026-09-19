@@ -67,8 +67,9 @@ func (s *PaymentServer) createPayPal(ctx context.Context,cents int64,currency,or
 }
 
 func (s *PaymentServer) CapturePayment(ctx context.Context,r *pb.CapturePaymentRequest)(*pb.CapturePaymentResponse,error){
+ if r.GetUserId()<=0{return nil,errors.New("user_id is required")}
  var orderID int64;var provider,providerID,status string
- if r.GetOrderId()>0 { if err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id,provider,provider_order_id,status FROM orders WHERE id=?",r.GetOrderId()).Scan(&orderID,&provider,&providerID,&status);err!=nil{return nil,err} } else { if r.GetProviderOrderId()=="" { return nil,errors.New("order_id or provider_order_id is required") }; if err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id,provider,provider_order_id,status FROM orders WHERE provider_order_id=?",r.GetProviderOrderId()).Scan(&orderID,&provider,&providerID,&status);err!=nil{return nil,err} }
+ if r.GetOrderId()>0 { if err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id,provider,provider_order_id,status FROM orders WHERE id=?",r.GetOrderId(),r.GetUserId()).Scan(&orderID,&provider,&providerID,&status);err!=nil{return nil,err} } else { if r.GetProviderOrderId()=="" { return nil,errors.New("order_id or provider_order_id is required") }; if err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id,provider,provider_order_id,status FROM orders WHERE provider_order_id=?",r.GetProviderOrderId(),r.GetUserId()).Scan(&orderID,&provider,&providerID,&status);err!=nil{return nil,err} }
  if status=="PAID"{return &pb.CapturePaymentResponse{OrderId:orderID,Status:status},nil};if providerID==""{providerID=r.GetProviderOrderId()};if provider!="PAYPAL"{return nil,errors.New("Stripe is completed by webhook; PayPal requires capture")}
  token,err:=s.paypalToken(ctx);if err!=nil{return nil,err};req,_:=http.NewRequestWithContext(ctx,http.MethodPost,s.paypalBase()+"/v2/checkout/orders/"+providerID+"/capture",strings.NewReader("{}"));req.Header.Set("Authorization","Bearer "+token);req.Header.Set("Content-Type","application/json");req.Header.Set("PayPal-Request-Id",fmt.Sprintf("%d",orderID))
  resp,err:=http.DefaultClient.Do(req);if err!=nil{return nil,err};defer resp.Body.Close();body,_:=io.ReadAll(resp.Body);if resp.StatusCode/100!=2{return nil,fmt.Errorf("paypal capture: %s",body)}
@@ -81,8 +82,9 @@ func (s *PaymentServer) markPaid(ctx context.Context,orderID int64)error{
  if _,err=tx.ExecContext(ctx,"INSERT INTO user_entitlements(user_id,drama_id,order_id) VALUES(?,?,?) ON DUPLICATE KEY UPDATE order_id=VALUES(order_id)",userID,dramaID,orderID);err!=nil{return err};return tx.Commit()
 }
 func (s *PaymentServer) GetOrder(ctx context.Context,r *pb.GetOrderRequest)(*pb.GetOrderResponse,error){
+ if r.GetUserId()<=0{return nil,errors.New("user_id is required")}
  var x pb.GetOrderResponse;var cents int64
- err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id,user_id,drama_id,order_no,provider,provider_order_id,amount_cents,currency,status FROM orders WHERE id=?",r.GetOrderId()).Scan(&x.OrderId,&x.UserId,&x.DramaId,&x.OrderNo,&x.Provider,&x.ProviderOrderId,&cents,&x.Currency,&x.Status);if err!=nil{return nil,err};x.Amount=fmt.Sprintf("%.2f",float64(cents)/100);return &x,nil
+ err:=s.svcCtx.DB.QueryRowContext(ctx,"SELECT id,user_id,drama_id,order_no,provider,provider_order_id,amount_cents,currency,status FROM orders WHERE id=? AND user_id=?",r.GetOrderId(),r.GetUserId()).Scan(&x.OrderId,&x.UserId,&x.DramaId,&x.OrderNo,&x.Provider,&x.ProviderOrderId,&cents,&x.Currency,&x.Status);if err!=nil{return nil,err};x.Amount=fmt.Sprintf("%.2f",float64(cents)/100);return &x,nil
 }
 func providerName(p pb.Provider)string{if p==pb.Provider_PAYPAL{return "PAYPAL"};return "STRIPE"}
 
