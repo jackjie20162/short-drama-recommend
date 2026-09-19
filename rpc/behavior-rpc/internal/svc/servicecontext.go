@@ -19,6 +19,6 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	database, err := db.OpenMySQL(c.Mysql.DataSource)
 	if err != nil { panic(err) }
-	r := cache.NewRedis(c.Redis.Host, c.Redis.Pass)
+	r := cache.NewRedis(c.CacheRedis.Host, c.CacheRedis.Pass)
 	return &ServiceContext{Config:c, DB:database, BehaviorRepo:repository.NewMySQLBehaviorRepository(database), Redis:r}
 }
