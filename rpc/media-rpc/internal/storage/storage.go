@@ -4,6 +4,7 @@ import (
  "context"
  "fmt"
  "net/http"
+ "os"
  "strings"
  "time"
 
@@ -30,6 +31,7 @@ type Storage interface {
  PresignPut(context.Context,string,string,time.Duration)(string,error)
  PresignGet(context.Context,string,time.Duration)(string,error)
  Head(context.Context,string)(int64,error)
+ PutFile(context.Context,string,string,string) error
  PublicURL(string) string
 }
 
@@ -70,6 +72,7 @@ func(s *ossStorage)PresignGet(ctx context.Context,key string,ttl time.Duration)(
 func(s *ossStorage)Head(ctx context.Context,key string)(int64,error){
  u,e:=s.PresignGet(ctx,key,2*time.Minute);if e!=nil{return 0,e};req,e:=http.NewRequestWithContext(ctx,http.MethodHead,u,nil);if e!=nil{return 0,e};resp,e:=http.DefaultClient.Do(req);if e!=nil{return 0,e};defer resp.Body.Close();if resp.StatusCode/100!=2{return 0,fmt.Errorf("storage HEAD returned %s",resp.Status)};return resp.ContentLength,nil
 }
+func(s *ossStorage)PutFile(ctx context.Context,key,filePath,contentType string)error{f,e:=os.Open(filePath);if e!=nil{return e};defer f.Close();_,e=s.client.PutObject(ctx,&oss.PutObjectRequest{Bucket:oss.Ptr(s.bucket),Key:oss.Ptr(key),Body:f,ContentType:oss.Ptr(contentType)});return e}
 func(s *ossStorage)PublicURL(key string)string{if s.cdn!=""{return strings.TrimRight(s.cdn,"/")+"/"+strings.TrimLeft(key,"/")};return ""}
 
 type s3Storage struct{client *s3.Client;presign *s3.PresignClient;bucket,cdn string}
@@ -87,4 +90,5 @@ func(s *s3Storage)PresignGet(ctx context.Context,key string,ttl time.Duration)(s
 func(s *s3Storage)Head(ctx context.Context,key string)(int64,error){
  u,e:=s.PresignGet(ctx,key,2*time.Minute);if e!=nil{return 0,e};req,e:=http.NewRequestWithContext(ctx,http.MethodHead,u,nil);if e!=nil{return 0,e};resp,e:=http.DefaultClient.Do(req);if e!=nil{return 0,e};defer resp.Body.Close();if resp.StatusCode/100!=2{return 0,fmt.Errorf("storage HEAD returned %s",resp.Status)};return resp.ContentLength,nil
 }
+func(s *s3Storage)PutFile(ctx context.Context,key,filePath,contentType string)error{f,e:=os.Open(filePath);if e!=nil{return e};defer f.Close();_,e=s.client.PutObject(ctx,&s3.PutObjectInput{Bucket:aws.String(s.bucket),Key:aws.String(key),Body:f,ContentType:aws.String(contentType)});return e}
 func(s *s3Storage)PublicURL(key string)string{if s.cdn!=""{return strings.TrimRight(s.cdn,"/")+"/"+strings.TrimLeft(key,"/")};return ""}
