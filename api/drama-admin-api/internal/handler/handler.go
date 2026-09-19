@@ -34,7 +34,7 @@ func RegisterRoutes(s *rest.Server,ctx *ServiceContext){
   {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/status",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x pb.SetEpisodeStatusRequest;if readJSON(w,r,&x)!=nil{return};x.Id=id;v,e:=ctx.Drama.SetEpisodeStatus(r.Context(),&x);write(w,v,e)}},
   {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/upload",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x mediapb.CreateUploadRequest;if readJSON(w,r,&x)!=nil{return};x.EpisodeId=id;v,e:=ctx.Media.CreateUpload(r.Context(),&x);write(w,v,e)}},
   {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/upload/complete",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x mediapb.CompleteUploadRequest;if readJSON(w,r,&x)!=nil{return};x.EpisodeId=id;v,e:=ctx.Media.CompleteUpload(r.Context(),&x);write(w,v,e)}},
-  {Method:http.MethodGet,Path:"/api/v1/admin/settings/:group",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");v,e:=readSettings(r,ctx.DB,group);write(w,v,e)}},
+  {Method:http.MethodGet,Path:"/api/v1/admin/settings/:group",Handler:func(w http.ResponseWriter,r *http.Request){group:=pathParam(r,"/api/v1/admin/settings/");v,e:=readSettings(r,ctx.DB,group);write(w,v,e)}},
   {Method:http.MethodPut,Path:"/api/v1/admin/settings/:group",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");var values map[string]any;if readJSON(w,r,&values)!=nil{return};v,e:=saveSettings(r,ctx.DB,group,values);write(w,v,e)}},
   {Method:http.MethodPost,Path:"/api/v1/admin/settings/:group/test",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");var x struct{Provider string `json:"provider"`};if readJSON(w,r,&x)!=nil{return};v,e:=testSettings(r,ctx.DB,group,x.Provider);write(w,v,e)}},
  })
@@ -56,6 +56,7 @@ func testSettings(r *http.Request,db *sql.DB,group,provider string)(map[string]a
 }
 func boolInt(v bool)int{if v{return 1};return 0}
 func toString(v any)string{if s,ok:=v.(string);ok{return s};b,_:=json.Marshal(v);return string(b)}
+func pathParam(r *http.Request,prefix string)string{return strings.Trim(strings.TrimPrefix(r.URL.Path,prefix),"/")}
 func pathID(r *http.Request,prefix string)(int64,bool){x:=strings.TrimPrefix(r.URL.Path,prefix);x=strings.TrimSuffix(x,"/episodes");id,e:=strconv.ParseInt(x,10,64);return id,e==nil&&id>0}
 func readJSON(w http.ResponseWriter,r *http.Request,v any)error{defer r.Body.Close();if err:=json.NewDecoder(r.Body).Decode(v);err!=nil{http.Error(w,err.Error(),400);return err};return nil}
 func write(w http.ResponseWriter,v any,e error){w.Header().Set("Content-Type","application/json");if e!=nil{http.Error(w,e.Error(),500);return};json.NewEncoder(w).Encode(v)}
