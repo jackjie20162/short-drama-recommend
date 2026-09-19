@@ -79,6 +79,7 @@ func (h *Handler) ListDrama(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	var req feedReq
 	if err := httpx.Parse(r, &req); err != nil { httpx.Error(w, err); return }
+	if uid, err := auth.Bearer(r.Header.Get("Authorization")); err == nil { req.UserID = uid }
 	resp, err := h.svcCtx.Recommend.GetFeed(r.Context(), &recommendpb.FeedRequest{UserId:req.UserID, Country:req.Country, Language:req.Language, PageSize:int32(req.PageSize), Cursor:req.Cursor})
 	if err != nil { httpx.Error(w, err); return }
 	httpx.OkJson(w, resp)
