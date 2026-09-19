@@ -9,7 +9,7 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-type Drama struct { ent.Schema }
+type Drama struct{ ent.Schema }
 
 func (Drama) Fields() []ent.Field {
 	return []ent.Field{
@@ -25,9 +25,9 @@ func (Drama) Fields() []ent.Field {
 		field.Uint64("price_cents").Default(0),
 		field.String("currency").Default("USD"),
 		field.Int8("status").Default(1),
-		field.Float64("popularity").Default(0),
-		field.Float64("completion_rate").Default(0),
-		field.Float64("pay_rate").Default(0),
+		field.Float("popularity").Default(0),
+		field.Float("completion_rate").Default(0),
+		field.Float("pay_rate").Default(0),
 		field.Time("published_at").Optional().Nillable(),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

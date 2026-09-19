@@ -8,13 +8,13 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-type UserTagProfile struct { ent.Schema }
+type UserTagProfile struct{ ent.Schema }
 
 func (UserTagProfile) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("user_id"),
 		field.Uint64("tag_id"),
-		field.Float64("weight").Default(0),
+		field.Float("weight").Default(0),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}
 }
