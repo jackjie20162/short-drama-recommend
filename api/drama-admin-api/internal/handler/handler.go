@@ -57,6 +57,6 @@ func testSettings(r *http.Request,db *sql.DB,group,provider string)(map[string]a
 func boolInt(v bool)int{if v{return 1};return 0}
 func toString(v any)string{if s,ok:=v.(string);ok{return s};b,_:=json.Marshal(v);return string(b)}
 func pathParam(r *http.Request,prefix string)string{return strings.Trim(strings.TrimPrefix(r.URL.Path,prefix),"/")}
-func pathID(r *http.Request,prefix string)(int64,bool){x:=strings.TrimPrefix(r.URL.Path,prefix);x=strings.TrimSuffix(x,"/episodes");id,e:=strconv.ParseInt(x,10,64);return id,e==nil&&id>0}
+func pathID(r *http.Request,prefix string)(int64,bool){x:=strings.TrimPrefix(r.URL.Path,prefix);if i:=strings.IndexByte(x,'/');i>=0{x=x[:i]};id,e:=strconv.ParseInt(x,10,64);return id,e==nil&&id>0}
 func readJSON(w http.ResponseWriter,r *http.Request,v any)error{defer r.Body.Close();if err:=json.NewDecoder(r.Body).Decode(v);err!=nil{http.Error(w,err.Error(),400);return err};return nil}
 func write(w http.ResponseWriter,v any,e error){w.Header().Set("Content-Type","application/json");if e!=nil{http.Error(w,e.Error(),500);return};json.NewEncoder(w).Encode(v)}
