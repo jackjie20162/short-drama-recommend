@@ -2,6 +2,7 @@ package handler
 
 import(
  "database/sql"
+ "short-drama-recommend/internal/db"
  "encoding/json"
  "errors"
  "net/http"
@@ -17,7 +18,7 @@ import(
 
 type ServiceContext struct{Config config.Config;DB *sql.DB;Drama pb.DramaAdminServiceClient;Payment paymentpb.PaymentServiceClient}
 func NewServiceContext(c config.Config)*ServiceContext{
- database,err:=sql.Open("mysql",c.Mysql.DataSource);if err!=nil{panic(err)}
+ database,err:=db.OpenMySQL(c.Mysql.DataSource);if err!=nil{panic(err)}
  return &ServiceContext{Config:c,DB:database,Drama:pb.NewDramaAdminServiceClient(zrpc.MustNewClient(c.DramaRpc).Conn()),Payment:paymentpb.NewPaymentServiceClient(zrpc.MustNewClient(c.PaymentRpc).Conn())}
 }
 func RegisterRoutes(s *rest.Server,ctx *ServiceContext){
@@ -32,7 +33,7 @@ func RegisterRoutes(s *rest.Server,ctx *ServiceContext){
   {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/status",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x pb.SetEpisodeStatusRequest;if readJSON(w,r,&x)!=nil{return};x.Id=id;v,e:=ctx.Drama.SetEpisodeStatus(r.Context(),&x);write(w,v,e)}},
   {Method:http.MethodGet,Path:"/api/v1/admin/settings/:group",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");v,e:=readSettings(r,ctx.DB,group);write(w,v,e)}},
   {Method:http.MethodPut,Path:"/api/v1/admin/settings/:group",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");var values map[string]any;if readJSON(w,r,&values)!=nil{return};v,e:=saveSettings(r,ctx.DB,group,values);write(w,v,e)}},
-  {Method:http.MethodPost,Path:"/api/v1/admin/settings/:group/test",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");var x struct{Provider string 'json:"provider"'};if readJSON(w,r,&x)!=nil{return};v,e:=testSettings(r,ctx.DB,group,x.Provider);write(w,v,e)}},
+  {Method:http.MethodPost,Path:"/api/v1/admin/settings/:group/test",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");var x struct{Provider string `json:"provider"`};if readJSON(w,r,&x)!=nil{return};v,e:=testSettings(r,ctx.DB,group,x.Provider);write(w,v,e)}},
  })
 }
 func readSettings(r *http.Request,db *sql.DB,group string)(map[string]any,error){
