@@ -7,6 +7,11 @@ ES:
   Address: http://127.0.0.1:9200
   Index: dramas
 
+MMoE:
+  Enabled: false
+  Address: http://127.0.0.1:8000
+  Model: mmoe
+
 Rank:
   PopularityWeight: 0.35
   CompletionWeight: 0.30
