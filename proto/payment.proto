@@ -23,9 +23,9 @@ message CreateOrderResponse {
   string amount = 7;
   string currency = 8;
 }
-message CapturePaymentRequest { int64 order_id = 1; string provider_order_id = 2; }
+message CapturePaymentRequest { int64 order_id = 1; string provider_order_id = 2; int64 user_id = 3; }
 message CapturePaymentResponse { int64 order_id = 1; string status = 2; }
-message GetOrderRequest { int64 order_id = 1; }
+message GetOrderRequest { int64 order_id = 1; int64 user_id = 2; }
 message ListOrdersRequest { int64 user_id=1; int32 page=2; int32 page_size=3; }
 message ListOrdersResponse { repeated GetOrderResponse items=1; int64 total=2; }
 message WebhookRequest { string provider=1; string payload=2; string signature=3; string transmission_id=4; string transmission_time=5; string cert_url=6; string auth_algo=7; string transmission_sig=8; string webhook_id=9; }
