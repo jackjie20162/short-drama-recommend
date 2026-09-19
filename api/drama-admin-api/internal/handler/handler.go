@@ -13,13 +13,14 @@ import(
  "short-drama-recommend/api/drama-admin-api/internal/config"
  "short-drama-recommend/rpc/drama-rpc/pb"
  paymentpb "short-drama-recommend/rpc/payment-rpc/pb"
+ mediapb "short-drama-recommend/rpc/media-rpc/pb"
  "short-drama-recommend/internal/settings"
 )
 
-type ServiceContext struct{Config config.Config;DB *sql.DB;Drama pb.DramaAdminServiceClient;Payment paymentpb.PaymentServiceClient}
+type ServiceContext struct{Config config.Config;DB *sql.DB;Drama pb.DramaAdminServiceClient;Payment paymentpb.PaymentServiceClient;Media mediapb.MediaServiceClient}
 func NewServiceContext(c config.Config)*ServiceContext{
  database,err:=db.OpenMySQL(c.Mysql.DataSource);if err!=nil{panic(err)}
- return &ServiceContext{Config:c,DB:database,Drama:pb.NewDramaAdminServiceClient(zrpc.MustNewClient(c.DramaRpc).Conn()),Payment:paymentpb.NewPaymentServiceClient(zrpc.MustNewClient(c.PaymentRpc).Conn())}
+ return &ServiceContext{Config:c,DB:database,Drama:pb.NewDramaAdminServiceClient(zrpc.MustNewClient(c.DramaRpc).Conn()),Payment:paymentpb.NewPaymentServiceClient(zrpc.MustNewClient(c.PaymentRpc).Conn()),Media:mediapb.NewMediaServiceClient(zrpc.MustNewClient(c.MediaRpc).Conn())}
 }
 func RegisterRoutes(s *rest.Server,ctx *ServiceContext){
  s.AddRoutes([]rest.Route{
@@ -31,6 +32,8 @@ func RegisterRoutes(s *rest.Server,ctx *ServiceContext){
   {Method:http.MethodGet,Path:"/api/v1/admin/dramas/:id/episodes",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/dramas/");if !ok{http.Error(w,"invalid id",400);return};st:=-1;if r.URL.Query().Get("status")!=""{st,_=strconv.Atoi(r.URL.Query().Get("status"))};v,e:=ctx.Drama.ListEpisode(r.Context(),&pb.ListEpisodeRequest{DramaId:id,Status:int32(st)});write(w,v,e)}},
   {Method:http.MethodGet,Path:"/api/v1/admin/orders",Handler:func(w http.ResponseWriter,r *http.Request){q:=r.URL.Query();page,_:=strconv.Atoi(q.Get("page"));ps,_:=strconv.Atoi(q.Get("page_size"));v,e:=ctx.Payment.ListOrders(r.Context(),&paymentpb.ListOrdersRequest{Page:int32(page),PageSize:int32(ps)});write(w,v,e)}},
   {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/status",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x pb.SetEpisodeStatusRequest;if readJSON(w,r,&x)!=nil{return};x.Id=id;v,e:=ctx.Drama.SetEpisodeStatus(r.Context(),&x);write(w,v,e)}},
+  {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/upload",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x mediapb.CreateUploadRequest;if readJSON(w,r,&x)!=nil{return};x.EpisodeId=id;v,e:=ctx.Media.CreateUpload(r.Context(),&x);write(w,v,e)}},
+  {Method:http.MethodPost,Path:"/api/v1/admin/episodes/:id/upload/complete",Handler:func(w http.ResponseWriter,r *http.Request){id,ok:=pathID(r,"/api/v1/admin/episodes/");if !ok{http.Error(w,"invalid id",400);return};var x mediapb.CompleteUploadRequest;if readJSON(w,r,&x)!=nil{return};x.EpisodeId=id;v,e:=ctx.Media.CompleteUpload(r.Context(),&x);write(w,v,e)}},
   {Method:http.MethodGet,Path:"/api/v1/admin/settings/:group",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");v,e:=readSettings(r,ctx.DB,group);write(w,v,e)}},
   {Method:http.MethodPut,Path:"/api/v1/admin/settings/:group",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");var values map[string]any;if readJSON(w,r,&values)!=nil{return};v,e:=saveSettings(r,ctx.DB,group,values);write(w,v,e)}},
   {Method:http.MethodPost,Path:"/api/v1/admin/settings/:group/test",Handler:func(w http.ResponseWriter,r *http.Request){group:=r.PathValue("group");var x struct{Provider string `json:"provider"`};if readJSON(w,r,&x)!=nil{return};v,e:=testSettings(r,ctx.DB,group,x.Provider);write(w,v,e)}},
