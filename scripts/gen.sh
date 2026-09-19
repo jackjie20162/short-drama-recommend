@@ -21,8 +21,10 @@ generate_rpc() {
   mkdir -p "../$out/pb"
 
   goctl rpc protoc "$proto" \
-    --go_out=paths=source_relative:"../$out/pb" \
-    --go-grpc_out=paths=source_relative:"../$out/pb" \
+    --go_out="../$out/pb" \
+    --go_opt=module=short-drama-recommend \
+    --go-grpc_out="../$out/pb" \
+    --go-grpc_opt=module=short-drama-recommend \
     --zrpc_out="../$out"
 }
 
